@@ -1,0 +1,12 @@
+.app {
+  min-height: 100%;
+}
+
+.app__main {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 20px 24px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}

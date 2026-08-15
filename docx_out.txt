@@ -1,0 +1,983 @@
+# ============================================================
+# AVOIDABLE / FREQUENT ED UTILIZATION
+# COMPLETE ML PIPELINE
+#
+# TRAIN:
+#   raw_members.csv
+#   raw_ed_visits.csv
+#   raw_care_history.csv
+#
+# TEST:
+#   Separate unseen 100-patient datasets
+#
+# MODEL:
+#   Tree-based classifier (Random Forest)
+#
+# OUTPUT:
+#   Risk probability
+#   Risk score
+#   Risk category
+# ============================================================
+
+# ============================================================
+# 1. IMPORTS
+# ============================================================
+
+import pandas as pd
+import numpy as np
+import joblib
+
+from google.colab import files
+
+from sklearn.model_selection import train_test_split
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+
+from sklearn.ensemble import RandomForestClassifier
+
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    roc_auc_score,
+    confusion_matrix,
+    classification_report
+)
+
+print("✅ Libraries loaded")
+
+# ============================================================
+# 2. UPLOAD TRAINING DATA
+# ============================================================
+
+print("\n================================================")
+print("UPLOAD TRAINING DATA")
+print("================================================")
+
+print("""
+Upload these 3 files:
+
+1. raw_members.csv
+2. raw_ed_visits.csv
+3. raw_care_history.csv
+""")
+
+uploaded = files.upload()
+
+# Automatically identify files
+
+members_file = None
+ed_file = None
+care_file = None
+
+for filename in uploaded.keys():
+
+    name = filename.lower()
+
+    if "members" in name:
+        members_file = filename
+
+    elif "ed_visits" in name:
+        ed_file = filename
+
+    elif "care_history" in name:
+        care_file = filename
+
+if members_file is None:
+    raise FileNotFoundError("Members CSV not found")
+
+if ed_file is None:
+    raise FileNotFoundError("ED visits CSV not found")
+
+if care_file is None:
+    raise FileNotFoundError("Care history CSV not found")
+
+# ============================================================
+# 3. LOAD TRAINING DATA
+# ============================================================
+
+members = pd.read_csv(members_file)
+ed = pd.read_csv(ed_file)
+care = pd.read_csv(care_file)
+
+print("\n================================================")
+print("TRAINING DATA")
+print("================================================")
+
+print("Members      :", members.shape)
+print("ED Visits    :", ed.shape)
+print("Care History :", care.shape)
+
+# ============================================================
+# 4. DATE PROCESSING
+# ============================================================
+
+ed["visit_date"] = pd.to_datetime(
+    ed["visit_date"],
+    errors="coerce"
+)
+
+care["visit_date"] = pd.to_datetime(
+    care["visit_date"],
+    errors="coerce"
+)
+
+# ============================================================
+# 5. REFERENCE DATE
+# ============================================================
+
+reference_date = ed["visit_date"].max()
+
+print("\nReference date:", reference_date)
+
+# ============================================================
+# 6. ED TIME WINDOW
+# ============================================================
+
+ed["days_since_reference"] = (
+    reference_date -
+    ed["visit_date"]
+).dt.days
+
+# ============================================================
+# 7. ED VISITS - 365 DAYS
+# ============================================================
+
+ed_365 = (
+
+    ed[
+        (ed["days_since_reference"] >= 0) &
+        (ed["days_since_reference"] <= 365)
+    ]
+
+    .groupby("member_id")
+
+    .size()
+
+    .reset_index(
+        name="ED_visits_365d"
+    )
+)
+
+# ============================================================
+# 8. ED VISITS - 180 DAYS
+# ============================================================
+
+ed_180 = (
+
+    ed[
+        (ed["days_since_reference"] >= 0) &
+        (ed["days_since_reference"] <= 180)
+    ]
+
+    .groupby("member_id")
+
+    .size()
+
+    .reset_index(
+        name="ED_visits_180d"
+    )
+)
+
+# ============================================================
+# 9. ED VISITS - 90 DAYS
+# ============================================================
+
+ed_90 = (
+
+    ed[
+        (ed["days_since_reference"] >= 0) &
+        (ed["days_since_reference"] <= 90)
+    ]
+
+    .groupby("member_id")
+
+    .size()
+
+    .reset_index(
+        name="ED_visits_90d"
+    )
+)
+
+# ============================================================
+# 10. ED VISITS - 30 DAYS
+# ============================================================
+
+ed_30 = (
+
+    ed[
+        (ed["days_since_reference"] >= 0) &
+        (ed["days_since_reference"] <= 30)
+    ]
+
+    .groupby("member_id")
+
+    .size()
+
+    .reset_index(
+        name="ED_visits_30d"
+    )
+)
+
+# ============================================================
+# 11. LAST ED VISIT
+# ============================================================
+
+last_ed = (
+
+    ed.groupby("member_id")["visit_date"]
+
+    .max()
+
+    .reset_index(
+        name="last_ED_date"
+    )
+)
+
+last_ed["days_since_last_ED"] = (
+
+    reference_date -
+    last_ed["last_ED_date"]
+
+).dt.days
+
+# ============================================================
+# 12. DIAGNOSIS FEATURES
+# ============================================================
+
+diagnosis_features = pd.crosstab(
+    ed["member_id"],
+    ed["diagnosis"]
+)
+
+diagnosis_features.columns = [
+
+    "diagnosis_" +
+
+    str(col)
+    .replace(" ", "_")
+    .replace("-", "_")
+    .replace("/", "_")
+
+    for col in diagnosis_features.columns
+
+]
+
+diagnosis_features = (
+    diagnosis_features
+    .reset_index()
+)
+
+# ============================================================
+# 13. ED SEVERITY FEATURES
+# ============================================================
+
+ed_summary = (
+
+    ed.groupby("member_id")
+
+    .agg(
+
+        ED_admissions=("admitted", "sum"),
+
+        ED_ICU_visits=("icu", "sum"),
+
+        ED_major_procedures=(
+            "major_procedure",
+            "sum"
+        ),
+
+        ED_red_flags=(
+            "red_flag",
+            "sum"
+        ),
+
+        ED_total_cost=(
+            "cost",
+            "sum"
+        ),
+
+        ED_avg_cost=(
+            "cost",
+            "mean"
+        )
+
+    )
+
+    .reset_index()
+)
+
+# ============================================================
+# 14. CARE HISTORY
+# ============================================================
+
+care_counts = pd.crosstab(
+    care["member_id"],
+    care["care_type"]
+)
+
+care_counts.columns = [
+
+    "care_" +
+    str(col).replace(" ", "_")
+
+    for col in care_counts.columns
+
+]
+
+care_counts = (
+    care_counts
+    .reset_index()
+)
+
+# Make sure all care columns exist
+
+expected_care = [
+
+    "care_PCP",
+
+    "care_Urgent_Care",
+
+    "care_Telehealth",
+
+    "care_Care_Management"
+
+]
+
+for col in expected_care:
+
+    if col not in care_counts.columns:
+
+        care_counts[col] = 0
+
+# ============================================================
+# 15. LAST CARE VISIT
+# ============================================================
+
+last_care = (
+
+    care.groupby("member_id")["visit_date"]
+
+    .max()
+
+    .reset_index(
+        name="last_care_date"
+    )
+)
+
+last_care["days_since_last_care"] = (
+
+    reference_date -
+    last_care["last_care_date"]
+
+).dt.days
+
+# ============================================================
+# 16. MERGE FEATURES
+# ============================================================
+
+features = members.copy()
+
+tables = [
+
+    ed_365,
+
+    ed_180,
+
+    ed_90,
+
+    ed_30,
+
+    last_ed,
+
+    diagnosis_features,
+
+    ed_summary,
+
+    care_counts,
+
+    last_care
+
+]
+
+for table in tables:
+
+    features = features.merge(
+
+        table,
+
+        on="member_id",
+
+        how="left"
+
+    )
+
+# ============================================================
+# 17. FILL MISSING UTILIZATION FEATURES
+# ============================================================
+
+for col in features.columns:
+
+    if (
+
+        col.startswith("ED_")
+
+        or col.startswith("care_")
+
+        or col.startswith("diagnosis_")
+
+    ):
+
+        features[col] = (
+
+            features[col]
+            .fillna(0)
+
+        )
+
+# ============================================================
+# 18. DISTANCE IMPUTATION
+# ============================================================
+
+for col in [
+
+    "pcp_distance_miles",
+
+    "urgent_care_distance_miles"
+
+]:
+
+    if col in features.columns:
+
+        features[col] = (
+
+            features[col]
+
+            .fillna(
+                features[col].median()
+            )
+
+        )
+
+# ============================================================
+# 19. DERIVED FEATURES
+# ============================================================
+
+features["alternative_care_visits"] = (
+
+    features["care_Urgent_Care"]
+
+    +
+
+    features["care_Telehealth"]
+
+)
+
+features["total_non_ED_care"] = (
+
+    features["care_PCP"]
+
+    +
+
+    features["care_Urgent_Care"]
+
+    +
+
+    features["care_Telehealth"]
+
+    +
+
+    features["care_Care_Management"]
+
+)
+
+features["ED_to_alternative_ratio"] = (
+
+    features["ED_visits_365d"]
+
+    /
+
+    (
+        features["alternative_care_visits"]
+        + 1
+    )
+
+)
+
+features["access_burden"] = (
+
+    features["transportation_barrier"]
+
+    +
+
+    (
+        features["pcp_distance_miles"] > 10
+    ).astype(int)
+
+    +
+
+    (
+        features["urgent_care_distance_miles"] > 10
+    ).astype(int)
+
+)
+
+clinical_columns = [
+
+    "diabetes",
+
+    "copd",
+
+    "hypertension",
+
+    "chf",
+
+    "asthma",
+
+    "ckd"
+
+]
+
+existing = [
+
+    c for c in clinical_columns
+    if c in features.columns
+
+]
+
+features["clinical_burden"] = (
+
+    features[existing]
+    .sum(axis=1)
+
+)
+
+# ============================================================
+# 20. CREATE TARGET
+# ============================================================
+#
+# IMPORTANT:
+#
+# Frequent ED user = 2 or more ED visits
+#
+# We create the target BEFORE removing
+# ED utilization features.
+#
+# ============================================================
+
+features["frequent_ED_user"] = (
+
+    features["ED_visits_365d"] >= 2
+
+).astype(int)
+
+print("\n================================================")
+print("TARGET DISTRIBUTION")
+print("================================================")
+
+print(
+    features["frequent_ED_user"]
+    .value_counts()
+)
+
+print(
+    features["frequent_ED_user"]
+    .value_counts(
+        normalize=True
+    )
+)
+
+# ============================================================
+# 21. PREPARE X AND y
+# ============================================================
+
+y = features[
+    "frequent_ED_user"
+]
+
+X = features.drop(
+
+    columns=[
+
+        "frequent_ED_user",
+
+        "member_id",
+
+        "last_ED_date",
+
+        "last_care_date",
+
+        # TARGET-LEAKAGE FEATURES
+        #
+        # These directly describe ED utilization
+        # used to create the target.
+        #
+        "ED_visits_365d",
+        "ED_visits_180d",
+        "ED_visits_90d",
+        "ED_visits_30d",
+
+        "ED_to_alternative_ratio"
+
+    ],
+
+    errors="ignore"
+
+)
+
+# ============================================================
+# 22. REMOVE OTHER DIRECT ED OUTCOME VARIABLES
+# ============================================================
+#
+# These could make the model learn ED severity rather
+# than identify patients likely to become frequent users.
+#
+# ============================================================
+
+X = X.drop(
+
+    columns=[
+
+        "ED_admissions",
+
+        "ED_ICU_visits",
+
+        "ED_major_procedures",
+
+        "ED_red_flags",
+
+        "ED_total_cost",
+
+        "ED_avg_cost"
+
+    ],
+
+    errors="ignore"
+
+)
+
+# ============================================================
+# 23. TRAIN / VALIDATION SPLIT
+# ============================================================
+
+X_train, X_test, y_train, y_test = (
+
+    train_test_split(
+
+        X,
+
+        y,
+
+        test_size=0.20,
+
+        random_state=42,
+
+        stratify=y
+
+    )
+
+)
+
+print("\n================================================")
+print("TRAIN / TEST")
+print("================================================")
+
+print("Training:", X_train.shape)
+print("Testing :", X_test.shape)
+
+# ============================================================
+# 24. IDENTIFY CATEGORICAL FEATURES
+# ============================================================
+
+categorical_features = (
+
+    X_train
+    .select_dtypes(
+        include=["object", "category"]
+    )
+    .columns
+    .tolist()
+
+)
+
+numeric_features = (
+
+    X_train
+    .select_dtypes(
+        exclude=["object", "category"]
+    )
+    .columns
+    .tolist()
+
+)
+
+print("\nCategorical features:")
+print(categorical_features)
+
+print("\nNumeric features:")
+print(numeric_features)
+
+# ============================================================
+# 25. PREPROCESSING
+# ============================================================
+
+numeric_pipeline = Pipeline(
+
+    steps=[
+
+        (
+            "imputer",
+
+            SimpleImputer(
+                strategy="median"
+            )
+
+        )
+
+    ]
+
+)
+
+categorical_pipeline = Pipeline(
+
+    steps=[
+
+        (
+            "imputer",
+
+            SimpleImputer(
+                strategy="most_frequent"
+            )
+
+        ),
+
+        (
+            "encoder",
+
+            OneHotEncoder(
+                handle_unknown="ignore",
+                sparse_output=False
+            )
+
+        )
+
+    ]
+
+)
+
+preprocessor = ColumnTransformer(
+
+    transformers=[
+
+        (
+            "numeric",
+
+            numeric_pipeline,
+
+            numeric_features
+
+        ),
+
+        (
+            "categorical",
+
+            categorical_pipeline,
+
+            categorical_features
+
+        )
+
+    ]
+
+)
+
+# ============================================================
+# 26. RANDOM FOREST
+# ============================================================
+
+rf = RandomForestClassifier(
+
+    n_estimators=400,
+
+    max_depth=12,
+
+    min_samples_leaf=5,
+
+    class_weight="balanced",
+
+    random_state=42,
+
+    n_jobs=-1
+
+)
+
+# ============================================================
+# 27. COMPLETE MODEL PIPELINE
+# ============================================================
+
+pipeline = Pipeline(
+
+    steps=[
+
+        (
+            "preprocessor",
+
+            preprocessor
+
+        ),
+
+        (
+            "model",
+
+            rf
+
+        )
+
+    ]
+
+)
+
+# ============================================================
+# 28. TRAIN MODEL
+# ============================================================
+
+print("\n================================================")
+print("TRAINING MODEL...")
+print("================================================")
+
+pipeline.fit(
+    X_train,
+    y_train
+)
+
+print("✅ MODEL TRAINED")
+
+# ============================================================
+# 29. VALIDATION PREDICTION
+# ============================================================
+
+y_pred = pipeline.predict(
+    X_test
+)
+
+y_probability = pipeline.predict_proba(
+    X_test
+)[:, 1]
+
+# ============================================================
+# 30. MODEL EVALUATION
+# ============================================================
+
+accuracy = accuracy_score(
+    y_test,
+    y_pred
+)
+
+precision = precision_score(
+    y_test,
+    y_pred,
+    zero_division=0
+)
+
+recall = recall_score(
+    y_test,
+    y_pred,
+    zero_division=0
+)
+
+f1 = f1_score(
+    y_test,
+    y_pred,
+    zero_division=0
+)
+
+auc = roc_auc_score(
+    y_test,
+    y_probability
+)
+
+print("\n================================================")
+print("MODEL PERFORMANCE")
+print("================================================")
+
+print(
+    f"Accuracy  : {accuracy:.4f}"
+)
+
+print(
+    f"Precision : {precision:.4f}"
+)
+
+print(
+    f"Recall    : {recall:.4f}"
+)
+
+print(
+    f"F1 Score  : {f1:.4f}"
+)
+
+print(
+    f"ROC-AUC   : {auc:.4f}"
+)
+
+print("\nClassification Report:")
+
+print(
+    classification_report(
+        y_test,
+        y_pred,
+        zero_division=0
+    )
+)
+
+print("\nConfusion Matrix:")
+
+print(
+    confusion_matrix(
+        y_test,
+        y_pred
+    )
+)
+
+# ============================================================
+# 31. SAVE MODEL
+# ============================================================
+
+model_package = {
+
+    "model": pipeline,
+
+    "feature_columns": X.columns.tolist(),
+
+    "target": "frequent_ED_user",
+
+    "target_definition":
+        "2 or more ED visits within 365 days"
+
+}
+
+joblib.dump(
+
+    model_package,
+
+    "ed_risk_model.pkl"
+
+)
+
+print(
+    "\n✅ Saved model: ed_risk_model.pkl"
+)
+
+# ============================================================
+# 32. DOWNLOAD MODEL
+# ============================================================
+
+files.download(
+    "ed_risk_model.pkl"
+)
+
+
+
