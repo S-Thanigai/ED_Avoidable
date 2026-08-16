@@ -1,0 +1,52 @@
+{
+  "phase": "8D",
+  "objective": "Fix CRITICAL/HIGH findings from Phase 8C health check: GenAI safety-state contradiction, legacy /predict server freeze, GenAI navigation/tier misrepresentation",
+  "files_modified": [
+    "backend/agents/genai_explanation.py",
+    "backend/main.py",
+    "frontend/src/uc07/Uc07View.tsx",
+    "frontend/src/uc07/components/WhyFlaggedSection.tsx",
+    "backend/tests/test_genai_explanation.py",
+    "backend/tests/test_genai_explanation_authority.py",
+    "backend/tests/test_uc07_api.py"
+  ],
+  "files_created": [
+    "backend/tests/test_phase8d_genai_hardening.py",
+    "backend/tests/test_phase8d_legacy_concurrency.py",
+    "frontend/src/uc07/__tests__/Uc07View.pagination.test.tsx",
+    "frontend/src/uc07/__tests__/PopulationSummary.test.tsx",
+    "frontend/src/uc07/__tests__/MemberFilters.test.tsx",
+    "frontend/src/uc07/__tests__/Uc07ResultsTable.test.tsx",
+    "frontend/src/uc07/__tests__/MemberDetailsDrawer.test.tsx",
+    "docs/08D_CRITICAL_FIXES.md"
+  ],
+  "genai_structured_echo_added": true,
+  "genai_positive_safety_consistency_added": true,
+  "genai_navigation_self_contradiction_check_added": true,
+  "genai_risk_tier_synonym_regex_added": true,
+  "predict_threadpool_attempt_proven_insufficient": true,
+  "predict_processpool_fix_applied": true,
+  "predict_fix_verified_live": true,
+  "frontend_pagination_clamp_fix_applied": true,
+  "frontend_pagination_fix_verified_by_test": true,
+  "uc07_explain_contract_tests_added": 9,
+  "shap_ui_caveat_added": true,
+  "shap_math_changed": false,
+  "cors_env_configured": true,
+  "cors_azure_url_hardcoded": false,
+  "legacy_isolation_confirmed": true,
+  "backend_tests": {"baseline_phase8c": 591, "new": 39, "total_collected": 630, "passed": 629, "known_exception": "test_24_25_26_model_and_dataset_hashes_unchanged (DECISION_LOG #118, pre-existing, content-verified benign)"},
+  "frontend_tests": {"baseline_phase8c": 75, "new": 18, "total": 93, "failed": 0},
+  "model_changed": false,
+  "thresholds_changed": false,
+  "navigation_rules_changed": false,
+  "safety_agent_logic_changed": false,
+  "risk_agent_logic_changed": false,
+  "care_navigation_agent_logic_changed": false,
+  "model_and_dataset_hashes_unchanged": true,
+  "live_verification": {
+    "genai_structured_echo_and_positive_consistency": "verified live against real qwen3:8b",
+    "predict_health_response_time_with_fix_ms": 3,
+    "predict_health_response_time_without_fix": "no response within 20s+ (unbounded)"
+  }
+}

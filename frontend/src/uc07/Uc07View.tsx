@@ -146,7 +146,29 @@ export function Uc07View() {
   );
   const filtered = useMemo(() => filterDecisions(effectiveDecisions, filters), [effectiveDecisions, filters]);
   const sorted = useMemo(() => sortDecisions(filtered, sort), [filtered, sort]);
-  const paged = useMemo(() => sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [sorted, page]);
+
+  // Phase 8D Part 8 -- `sorted` can shrink for reasons OTHER than an
+  // explicit filter change (which already resets to page 1 via
+  // updateFilters): most notably, "Evaluate Current Safety" can change a
+  // member's safety.state such that they no longer match an ACTIVE
+  // filter, silently shrinking `sorted` while `page` stays wherever the
+  // user was. Without this clamp, `sorted.slice(...)` for a page beyond
+  // the new end returns `[]` while `sorted.length` is still > 0, so the
+  // "no members match" empty state (keyed off `sorted.length === 0`)
+  // never fires either -- the table just renders blank with no
+  // explanation. `clampedPage` (not raw `page`) is used to compute
+  // `paged` below AND is what's passed to <Pagination>, so a blank page
+  // is never rendered even for the one render cycle before the
+  // corrective effect below commits the clamped value back into `page`
+  // state (needed so a later "Next"/"Previous" click starts from the
+  // right place, not the stale one).
+  const maxPage = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const clampedPage = Math.min(page, maxPage);
+  useEffect(() => {
+    if (page !== clampedPage) setPage(clampedPage);
+  }, [clampedPage, page]);
+
+  const paged = useMemo(() => sorted.slice((clampedPage - 1) * PAGE_SIZE, clampedPage * PAGE_SIZE), [sorted, clampedPage]);
   const filtersActive = isFiltersActive(filters);
 
   const selectedDecision: FinalUC07Decision | null = selectedMemberId
@@ -223,7 +245,7 @@ export function Uc07View() {
                     sort={sort}
                     onSortChange={setSort}
                   />
-                  <Pagination page={page} totalItems={sorted.length} onPageChange={setPage} />
+                  <Pagination page={clampedPage} totalItems={sorted.length} onPageChange={setPage} />
                 </>
               )}
             </>

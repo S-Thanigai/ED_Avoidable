@@ -50,6 +50,14 @@ describe("WhyFlaggedSection", () => {
     expect(text.toLowerCase()).not.toContain("diagnos");
   });
 
+  it("shows a caveat that attribution values are not causal (Phase 8D Part 10)", () => {
+    const decision = makeDecision({});
+    render(<WhyFlaggedSection risk={decision.risk} />);
+    expect(
+      screen.getByText(/attribution signals and may reflect correlated features/i),
+    ).toBeInTheDocument();
+  });
+
   it("renders nothing when there are no explanation factors", () => {
     const decision = makeDecision({ risk: { explanation_factors: [] } });
     const { container } = render(<WhyFlaggedSection risk={decision.risk} />);

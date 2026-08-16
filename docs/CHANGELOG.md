@@ -1188,3 +1188,84 @@ Azure/non-localhost environments is explicitly deferred to Phase 9.
 **Next phase:** Phase 9 — Docker + production configuration/security
 hardening, and a decision on GenAI (Ollama) deployment strategy off of
 localhost. STOPPED per instruction; Docker/Azure not started.
+
+## Phase 8D — Critical Fixes + Regression Hardening — 2026-08-16
+
+**Objective:** Fix the CRITICAL and HIGH findings from the Phase 8C
+health check (GenAI safety-state contradiction, legacy `/predict`
+server-freeze, GenAI navigation/tier misrepresentation) without
+retraining the model, changing thresholds, or altering the Risk/
+Navigation/Safety agents' decision logic.
+
+**Files modified:**
+- `backend/agents/genai_explanation.py` — structured `risk_tier`/
+  `navigation_destination`/`safety_state` echo (exact-match validated,
+  primary guarantee); positive safety-consistency check (reassurance
+  phrases forbidden for ANY state, required-positive-phrase for OVERRIDE/
+  CAUTION); navigation self-contradiction check; risk-tier synonym
+  proximity regexes; updated system prompt.
+- `backend/main.py` — `POST /predict` routed through a
+  `ProcessPoolExecutor` (not `run_in_threadpool`, which was proven
+  insufficient — see `docs/08D_CRITICAL_FIXES.md` §5); `extract_features()`/
+  `explain_member()` on `run_in_threadpool`; `CORS_ORIGINS` env var
+  replacing hard-coded `allow_origins=["*"]`.
+- `frontend/src/uc07/Uc07View.tsx` — `clampedPage` fixes the pagination
+  desync after a safety re-evaluation shrinks the filtered set.
+- `frontend/src/uc07/components/WhyFlaggedSection.tsx` — added SHAP
+  attribution-vs-causal UI caveat (math unchanged).
+- `backend/tests/test_genai_explanation.py`,
+  `test_genai_explanation_authority.py` — updated fixtures for the new
+  structured-echo schema; strengthened 3 tests that previously passed
+  for the wrong reason (missing enum fields) to now genuinely exercise
+  the free-text consistency layer.
+
+**Files created:**
+- `backend/tests/test_phase8d_genai_hardening.py` — 25 tests, the exact
+  11 numbered GenAI scenarios from the phase spec plus adversarial
+  variants (e.g. correct structured echo + contradicting free text).
+- `backend/tests/test_phase8d_legacy_concurrency.py` — 3 tests proving
+  `/predict` no longer blocks `/health` or `/uc07/decide`, using real
+  concurrent ASGI requests against a genuinely small population slice
+  (not mocked).
+- `frontend/src/uc07/__tests__/Uc07View.pagination.test.tsx` — 2 tests
+  reproducing the exact pagination-desync scenario and the proper-empty-
+  state case.
+- `frontend/src/uc07/__tests__/PopulationSummary.test.tsx`,
+  `MemberFilters.test.tsx`, `Uc07ResultsTable.test.tsx`,
+  `MemberDetailsDrawer.test.tsx` — 15 focused tests for previously
+  thinly-covered components.
+- `docs/08D_CRITICAL_FIXES.md`.
+- 9 new `/uc07/explain` HTTP contract tests added to
+  `backend/tests/test_uc07_api.py`.
+
+**Model/thresholds/navigation rules/Safety Agent logic: NONE changed.**
+Verified: all pre-Phase-8D backend/frontend tests still pass; SHA-256
+hashes of all 3 original datasets, all 3 synthetic datasets, all 3
+synthetic snapshots, and both model artifacts match the Phase 8C
+baseline exactly, before and after every fix.
+
+**Automated tests:** backend 630 collected, 629 passing (1 known,
+pre-existing, content-verified-benign exception — see
+`docs/DECISION_LOG.md` #118, unrelated to this phase); frontend 93/93
+passing. Lint/build clean.
+
+**Live verification:** structured-echo + positive-consistency validation
+confirmed against a real running Ollama (`qwen3:8b`) across
+OVERRIDE/CAUTION/CLEAR scenarios. The `/predict` concurrency fix
+confirmed live: `GET /health` responded in 3ms while `/predict` ran in
+its own process (vs. 20+ seconds of total unresponsiveness before any
+fix, and ~22s of continued starvation with thread-pool-only — proven
+insufficient by a controlled diagnostic before committing to the
+process-pool fix).
+
+**Remaining non-blocking issues:** consistency checks remain phrase-/
+regex-based heuristics (the structured echo is the primary, exact
+guarantee); the Phase 8B hash-flake test remains order-dependent
+(documented, out of scope); `@app.on_event` deprecation warning
+(functionally correct); CORS config is preparation only, not a full
+production pass.
+
+**Next phase:** Phase 9 — Docker + production configuration/security
+hardening, GenAI deployment strategy off localhost, and (optionally)
+migrating `@app.on_event` to FastAPI lifespan handlers. STOPPED per
+instruction; Docker/Azure not started.

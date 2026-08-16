@@ -252,3 +252,114 @@ def test_all_navigation_destinations_reachable_across_full_population(client):
     expected = {"PRIMARY_CARE", "URGENT_CARE", "TELEHEALTH", "CARE_MANAGEMENT", "NO_PROACTIVE_NAVIGATION"}
     assert destinations.issubset(expected)
     assert len(destinations) >= 3  # real population should hit several branches, not just one
+
+
+# ---------------------------------------------------------------------------
+# Phase 8D Part 9/15 (tests 14-16) -- POST /uc07/explain HTTP contract tests.
+# GENAI_ENABLED is unset in this test process, so every one of these calls
+# resolves via the instant deterministic fallback -- no live Ollama needed,
+# these are pure HTTP-contract/validation tests.
+# ---------------------------------------------------------------------------
+
+_VALID_EXPLAIN_BODY = {
+    "risk": {
+        "probability": 0.05,
+        "tier": "LOW",
+        "model_version": "uc07-risk-synthetic-v1",
+        "factors": [{"display_name": "Access burden", "direction": "DECREASES_RISK"}],
+    },
+    "navigation": {"destination": "PRIMARY_CARE", "reason_codes": ["OUTPATIENT_CONTINUITY_OPPORTUNITY"]},
+    "safety": {"state": "CLEAR", "context_completeness": "COMPLETE", "context_source": "CALLER_SUPPLIED"},
+    "synthetic_model": True,
+}
+
+
+def test_uc07_explain_valid_request_returns_deterministic_fallback(client):
+    resp = client.post("/uc07/explain", json=_VALID_EXPLAIN_BODY)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["explanation_source"] == "DETERMINISTIC_FALLBACK"
+    assert body["model_used"] is None
+    for key in ("summary", "risk_explanation", "navigation_explanation", "safety_explanation", "disclaimer"):
+        assert isinstance(body[key], str) and body[key].strip()
+
+
+def test_uc07_explain_malformed_json_body_returns_4xx(client):
+    resp = client.post(
+        "/uc07/explain", content="{not valid json", headers={"Content-Type": "application/json"}
+    )
+    assert 400 <= resp.status_code < 500
+    assert "Traceback" not in resp.text
+
+
+def test_uc07_explain_missing_required_field_returns_422(client):
+    body = json.loads(json.dumps(_VALID_EXPLAIN_BODY))
+    del body["safety"]
+    resp = client.post("/uc07/explain", json=body)
+    assert resp.status_code == 422
+    assert "Traceback" not in resp.text
+
+
+def test_uc07_explain_missing_nested_field_returns_422(client):
+    body = json.loads(json.dumps(_VALID_EXPLAIN_BODY))
+    del body["risk"]["tier"]
+    resp = client.post("/uc07/explain", json=body)
+    assert resp.status_code == 422
+
+
+def test_uc07_explain_invalid_risk_tier_enum_returns_422(client):
+    body = json.loads(json.dumps(_VALID_EXPLAIN_BODY))
+    body["risk"]["tier"] = "EXTREME"
+    resp = client.post("/uc07/explain", json=body)
+    assert resp.status_code == 422
+    assert "Traceback" not in resp.text
+
+
+def test_uc07_explain_invalid_navigation_enum_returns_422(client):
+    body = json.loads(json.dumps(_VALID_EXPLAIN_BODY))
+    body["navigation"]["destination"] = "TELEPORTATION"
+    resp = client.post("/uc07/explain", json=body)
+    assert resp.status_code == 422
+
+
+def test_uc07_explain_invalid_safety_enum_returns_422(client):
+    body = json.loads(json.dumps(_VALID_EXPLAIN_BODY))
+    body["safety"]["state"] = "PANIC"
+    resp = client.post("/uc07/explain", json=body)
+    assert resp.status_code == 422
+
+
+def test_uc07_explain_invalid_probability_range_returns_422(client):
+    body = json.loads(json.dumps(_VALID_EXPLAIN_BODY))
+    body["risk"]["probability"] = 1.5
+    resp = client.post("/uc07/explain", json=body)
+    assert resp.status_code == 422
+
+
+def test_uc07_explain_no_body_returns_422(client):
+    resp = client.post("/uc07/explain")
+    assert resp.status_code == 422
+
+
+def test_uc07_explain_null_navigation_destination_is_valid(client):
+    """destination is legitimately null only when the OVERRIDE-producing
+    Safety Agent already ran -- the schema must accept it, not reject it."""
+    body = json.loads(json.dumps(_VALID_EXPLAIN_BODY))
+    body["navigation"]["destination"] = None
+    body["safety"]["state"] = "OVERRIDE"
+    resp = client.post("/uc07/explain", json=body)
+    assert resp.status_code == 200
+
+
+def test_uc07_explain_never_leaks_a_stack_trace(client):
+    for bad_body in (
+        {"risk": "not an object"},
+        {},
+        {"risk": _VALID_EXPLAIN_BODY["risk"], "navigation": None, "safety": _VALID_EXPLAIN_BODY["safety"], "synthetic_model": True},
+    ):
+        resp = client.post("/uc07/explain", json=bad_body)
+        assert resp.status_code == 422
+        text = resp.text
+        assert "Traceback" not in text
+        assert ".py" not in text  # no filesystem path leaked
+        assert "site-packages" not in text

@@ -32,11 +32,13 @@ GOOD_PAYLOAD = {
 }
 
 GOOD_RAW = {
+    "risk_tier": "HIGH",
+    "navigation_destination": "CARE_MANAGEMENT",
+    "safety_state": "CAUTION",
     "summary": "High modeled risk; suggested navigation is Care Management.",
     "risk_explanation": "This member's modeled risk tier is high, driven mainly by recent ED utilization.",
     "navigation_explanation": "The suggested navigation destination is care management, given elevated future risk.",
     "safety_explanation": "Current safety information is absent, so the system cannot confirm a fully clear state.",
-    "disclaimer": "Not medical advice.",
 }
 
 
@@ -70,8 +72,10 @@ def test_9_success_path_returns_genai_source(monkeypatch):
     assert result.explanation_source == ExplanationSource.GENAI
     assert result.model_used == "qwen3:8b"
     assert result.generation_time_ms is not None
-    # the model's own disclaimer text is NEVER surfaced
-    assert result.disclaimer != GOOD_RAW["disclaimer"]
+    # the model is never even asked for a disclaimer field anymore -- the
+    # centrally governed one is always used
+    import safety_policy
+    assert result.disclaimer == safety_policy.BASE_DISCLAIMER
 
 
 # ---- 10. Ollama unavailable (connection refused) ----
@@ -164,7 +168,9 @@ def test_14_negated_diagnosis_language_is_allowed(monkeypatch):
     # positive found during live testing).
     config = _enabled_config(monkeypatch)
     ok_raw = dict(GOOD_RAW)
-    ok_raw["safety_explanation"] = "This tool does not diagnose any condition; it only summarizes the safety state."
+    ok_raw["safety_explanation"] = (
+        "Current information is incomplete; this tool does not diagnose any condition, it only summarizes the safety state."
+    )
     monkeypatch.setattr(genai_explanation, "_call_ollama", lambda cfg, payload: ok_raw)
     result = genai_explanation.generate_explanation(GOOD_PAYLOAD, config)
     assert result.explanation_source == ExplanationSource.GENAI

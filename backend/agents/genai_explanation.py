@@ -37,24 +37,41 @@ What the model MUST NEVER do (Phase 8C Part 7) is enforced here by
 APPLICATION CODE, not only by the system prompt below:
     - a JSON schema (`format`) forces structured output; malformed JSON
       or a missing required key is rejected outright (_validate_genai_output)
+    - Phase 8D: the model MUST echo three structured enum fields
+      (risk_tier, navigation_destination, safety_state) verbatim from its
+      input, and every one of them is exact-match checked against the
+      authoritative decision -- this is the PRIMARY guarantee, not free
+      text. A Phase 8C health check found that free-text-only consistency
+      checks (rejecting known-wrong phrases) could still be bypassed by a
+      vague-but-wrong reassurance that names no OTHER state's phrase at
+      all (e.g. "everything looks fine" for an actual OVERRIDE); the
+      structured echo closes that gap structurally, and the free-text
+      checks below now run as a SECOND, independent layer on top of it,
+      not instead of it.
     - safety_policy.check_text() (the SAME centralized prohibited-phrase
       list the Safety & Policy Agent itself enforces) is run against
       every generated sentence
     - an additional GenAI-specific prohibited-content check
       (_genai_prohibited_violation) blocks diagnosis/medication/dosage/
       causal-claim language
-    - a tier/destination/safety-state CONSISTENCY check
+    - a tier/destination/safety-state free-text CONSISTENCY check
       (_tier_consistency_violation / _destination_consistency_violation /
+      _navigation_self_contradiction_violation /
       _safety_state_consistency_violation) rejects output that names a
       DIFFERENT risk tier, navigation destination, or safety state than
-      the one actually supplied in `payload`
+      the one actually supplied in `payload`, contradicts the CORRECT
+      destination (e.g. calling a real CARE_MANAGEMENT destination
+      "no action needed"), or -- for safety text specifically -- uses a
+      reassurance phrasing that's never acceptable, or omits the required
+      positive meaning for OVERRIDE/CAUTION (Phase 8D Part 2: rejecting
+      wrong phrases is not enough; the correct meaning must be present)
     - the returned `disclaimer` field is NEVER the model's own text --
       it is always overwritten with safety_policy.BASE_DISCLAIMER, so the
       model cannot weaken or omit the mandatory disclaimer
     - "think": false suppresses qwen3's chain-of-thought in the raw
-      Ollama response, and only the four structured content fields are
-      ever read out of that response -- no internal reasoning field is
-      ever surfaced to a caller
+      Ollama response, and only the structured content fields are ever
+      read out of that response -- no internal reasoning field is ever
+      surfaced to a caller
 Any rejection at any of these checks (or any network/timeout/HTTP/parse
 failure at all) falls through to `_deterministic_explanation`, which
 never raises and never depends on Ollama being installed, running, or
@@ -78,7 +95,22 @@ DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434"
 DEFAULT_OLLAMA_MODEL = "qwen3:8b"
 DEFAULT_TIMEOUT_SECONDS = 20.0
 
-_REQUIRED_KEYS = ("summary", "risk_explanation", "navigation_explanation", "safety_explanation")
+# Phase 8D: the model must ECHO these three structured fields verbatim from
+# its input -- exact-match validated against the authoritative decision
+# below -- rather than being trusted to convey tier/destination/state
+# semantics through free text alone. "NONE" is this module's own sentinel
+# for a null navigation.destination (which occurs only when safety.state is
+# OVERRIDE -- see contracts.py's FinalNavigationView docstring); it is not
+# a NavigationDestination enum value, just a JSON-safe way to require an
+# exact echo of "no destination" instead of leaving the field unconstrained.
+_RISK_TIER_VALUES = ("LOW", "MODERATE", "HIGH")
+_NAVIGATION_DESTINATION_VALUES = (
+    "PRIMARY_CARE", "URGENT_CARE", "TELEHEALTH", "CARE_MANAGEMENT", "NO_PROACTIVE_NAVIGATION", "NONE",
+)
+_SAFETY_STATE_VALUES = ("CLEAR", "CAUTION", "OVERRIDE")
+
+_REQUIRED_TEXT_KEYS = ("summary", "risk_explanation", "navigation_explanation", "safety_explanation")
+_REQUIRED_ENUM_KEYS = ("risk_tier", "navigation_destination", "safety_state")
 _MAX_FIELD_CHARS = 600
 _MAX_COMBINED_CHARS = 1500
 
@@ -93,6 +125,30 @@ _TIER_PHRASES = {
     "MODERATE": ("moderate risk",),
     "HIGH": ("high risk",),
 }
+
+# Phase 8D Part 3 -- exact-phrase matching alone is too weak: "significant
+# and elevated risk" for an actual LOW tier names no OTHER tier's exact
+# phrase, so _TIER_PHRASES alone would miss it (a demonstrated real gap).
+# These proximity regexes catch a severity WORD appearing near "risk"
+# (either order, within a short window) that contradicts the actual tier,
+# without banning the word outright -- "elevated" is fine describing an
+# unrelated factor, only "elevated risk"/"risk...elevated" is flagged. Not
+# an exhaustive synonym list by design (Part 3: "do not overfit to one
+# phrase") -- covers the common English ways to overstate/understate a
+# tier; anything genuinely ambiguous is deliberately left to fall through
+# to the exact-match structured `risk_tier` field, which is the primary
+# guarantee.
+_ELEVATED_RISK_RE = re.compile(
+    r"\b(elevated|significant|substantial|considerable|serious|severe|heightened|high|higher)\b"
+    r"[^.]{0,30}\brisk\b"
+    r"|\brisk\b[^.]{0,30}\b(elevated|significant|substantial|considerable|serious|severe|heightened|high|higher)\b"
+)
+_MINIMIZING_RISK_RE = re.compile(
+    r"\b(minimal|negligible|insignificant|little to no|very low|low|lower)\b"
+    r"[^.]{0,30}\brisk\b"
+    r"|\brisk\b[^.]{0,30}\b(minimal|negligible|insignificant|little to no|very low|low|lower)\b"
+)
+_EXTREME_RISK_RE = re.compile(r"\bvery\s+(low|high)\b[^.]{0,30}\brisk\b|\brisk\b[^.]{0,30}\bvery\s+(low|high)\b")
 
 _DESTINATION_PHRASES = {
     "PRIMARY_CARE": ("primary care",),
@@ -120,6 +176,64 @@ _SAFETY_STATE_PHRASES = {
     "CAUTION": ("safety state is caution", "marked as caution"),
     "OVERRIDE": ("safety override was triggered", "triggered a safety override", "safety state is override"),
 }
+
+# Phase 8D Part 2 -- POSITIVE safety consistency: rejecting known-wrong-state
+# phrases is not enough on its own (a vague-but-wrong reassurance like
+# "everything looks fine" names no OTHER state's phrase at all, so it would
+# slip past _SAFETY_STATE_PHRASES alone -- this was a demonstrated,
+# real gap found in the Phase 8C health check). Two more layers:
+#   1. a fixed list of reassurance/all-clear phrasings that are NEVER
+#      acceptable in a safety_explanation, regardless of actual state --
+#      even a genuinely CLEAR state must never be described this way
+#      (Phase 8C Part 12: "never say patient is safe / no emergency exists").
+#   2. for OVERRIDE and CAUTION specifically, the explanation must contain
+#      at least one phrase that actually carries the REQUIRED positive
+#      meaning for that state (an override trigger exists / current
+#      information is incomplete) -- silence is a violation, not just
+#      contradiction.
+_SAFETY_REASSURANCE_FORBIDDEN_PHRASES: tuple[str, ...] = (
+    "everything looks fine", "everything is fine", "everything's fine",
+    "no need to worry", "nothing to worry about", "no reason to worry",
+    "no reason to go to the hospital", "no reason to seek emergency",
+    "no reason to seek care", "nothing urgent", "nothing urgent here",
+    "routine care is enough", "no emergency concern", "no emergency concerns",
+    "you are safe", "you're safe", "patient is safe", "member is safe",
+    "no further action is needed", "no further action needed",
+    "no action needed", "no action is needed", "all good", "all clear here",
+    "no immediate concern", "no immediate concerns", "no concern", "no concerns",
+    "confirmed safe", "safe to proceed", "nothing further required",
+    "not an emergency", "this is not an emergency",
+)
+
+_SAFETY_STATE_REQUIRED_ANY_PHRASES: dict[str, tuple[str, ...]] = {
+    "OVERRIDE": (
+        "override", "triggered", "trigger", "high-acuity", "high acuity",
+        "safety rule", "should not be delayed", "do not delay", "not be delayed",
+        "emergency care", "call 911", "emergency department",
+    ),
+    "CAUTION": (
+        "incomplete", "absent", "not confirm", "cannot confirm", "unconfirmed",
+        "unknown", "not fully known", "not available", "partial", "not confirmed",
+    ),
+    # CLEAR has no required-positive-phrase list: the correct wording is a
+    # narrow, specific claim ("complete information did not trigger a
+    # configured rule") that this module's own deterministic template
+    # already models exactly -- requiring a fixed phrase set here would
+    # just re-implement _SAFETY_STATE_PHRASES["CLEAR"], which already runs.
+}
+
+# Phase 8D Part 4 -- a navigation_explanation for a REAL destination
+# (anything except NO_PROACTIVE_NAVIGATION / null) must never claim no
+# action is needed -- that directly contradicts having a destination at
+# all. Scoped separately from _DESTINATION_PHRASES (which catches naming a
+# DIFFERENT destination) because this catches self-contradiction about the
+# CORRECT destination.
+_NAVIGATION_NO_ACTION_PHRASES: tuple[str, ...] = (
+    "no action needed", "no action is needed", "no follow-up needed",
+    "no follow-up is needed", "nothing further required", "nothing further is required",
+    "no further action", "no further action is needed", "no referral needed",
+    "no referral is needed", "not necessary to follow up",
+)
 
 # GenAI-specific prohibited content -- beyond safety_policy's centralized
 # ED-avoidance phrase list (which the Safety & Policy Agent also enforces),
@@ -230,19 +344,38 @@ _SYSTEM_PROMPT = (
     "You are an explanation-writing assistant for a care-navigation support tool. "
     "You will be given ONLY a small structured JSON summary of a decision that has "
     "ALREADY been made by separate deterministic systems: a risk model, a navigation "
-    "rule engine, and a safety policy engine. Your ONLY job is to translate that "
-    "already-decided structured result into brief, plain-English sentences.\n\n"
-    "You MUST NOT: state a different risk probability or risk tier than the one given; "
-    "invent a different navigation destination; state or imply a different safety state "
-    "than the one given; diagnose any condition; recommend medications, dosages, or "
+    "rule engine, and a safety policy engine.\n\n"
+    "PART 1 -- REQUIRED STRUCTURED ECHO: your response MUST include three fields that "
+    "EXACTLY copy values already given to you in the input JSON, with no rewording or "
+    "inference: \"risk_tier\" (copy risk.tier exactly: LOW, MODERATE, or HIGH), "
+    "\"navigation_destination\" (copy navigation.destination exactly -- one of "
+    "PRIMARY_CARE, URGENT_CARE, TELEHEALTH, CARE_MANAGEMENT, NO_PROACTIVE_NAVIGATION -- or "
+    "the literal string \"NONE\" if navigation.destination is null), and \"safety_state\" "
+    "(copy safety.state exactly: CLEAR, CAUTION, or OVERRIDE). Copy these verbatim; do "
+    "not guess or change them.\n\n"
+    "PART 2 -- PLAIN-ENGLISH EXPLANATION: write summary, risk_explanation, "
+    "navigation_explanation, and safety_explanation as short (1-2 sentence) plain-English "
+    "strings that are fully consistent with the structured values above.\n\n"
+    "You MUST NOT: state a different risk probability or risk tier than the one given, "
+    "including via a synonym (never call a LOW tier \"elevated\"/\"significant\", and "
+    "never call a HIGH tier \"minimal\"/\"low\"); invent a different navigation "
+    "destination, or describe a real navigation destination as needing no action or no "
+    "follow-up; state or imply a different safety state than the one given.\n\n"
+    "Safety-state wording is especially important: for an OVERRIDE safety state, NEVER "
+    "use reassuring language such as \"everything looks fine\", \"no need to worry\", "
+    "\"you are safe\", or \"nothing urgent\" -- instead clearly state that a configured "
+    "high-acuity safety trigger exists and that emergency care should not be delayed. For "
+    "a CAUTION safety state, clearly state that current safety information is incomplete "
+    "or unknown, and NEVER imply the situation is confirmed safe. For a CLEAR safety "
+    "state, say only that complete supplied information did not trigger a configured "
+    "safety rule -- NEVER say \"the patient is safe\" or \"no emergency exists\".\n\n"
+    "You also MUST NOT: diagnose any condition; recommend medications, dosages, or "
     "treatment; invent symptoms, diagnoses, or risk factors not present in the input "
     "JSON; claim any factor CAUSES a future ED visit -- describe factors only as "
     "contributing to the model's own estimate; tell the reader to avoid, skip, or delay "
     "emergency or ED care; or reveal your internal reasoning process.\n\n"
     "Use ONLY the facts given in the input JSON. If information is not in the input "
-    "JSON, do not state it. Respond with ONLY the requested JSON object -- summary, "
-    "risk_explanation, navigation_explanation, safety_explanation, disclaimer -- each "
-    "value a short plain-English string of 1-2 sentences."
+    "JSON, do not state it. Respond with ONLY the requested JSON object."
 )
 
 
@@ -250,13 +383,18 @@ def _response_schema() -> dict:
     return {
         "type": "object",
         "properties": {
+            "risk_tier": {"type": "string", "enum": list(_RISK_TIER_VALUES)},
+            "navigation_destination": {"type": "string", "enum": list(_NAVIGATION_DESTINATION_VALUES)},
+            "safety_state": {"type": "string", "enum": list(_SAFETY_STATE_VALUES)},
             "summary": {"type": "string"},
             "risk_explanation": {"type": "string"},
             "navigation_explanation": {"type": "string"},
             "safety_explanation": {"type": "string"},
-            "disclaimer": {"type": "string"},
         },
-        "required": ["summary", "risk_explanation", "navigation_explanation", "safety_explanation", "disclaimer"],
+        "required": [
+            "risk_tier", "navigation_destination", "safety_state",
+            "summary", "risk_explanation", "navigation_explanation", "safety_explanation",
+        ],
     }
 
 
@@ -292,14 +430,27 @@ def _genai_prohibited_violation(text: str) -> bool:
 
 
 def _tier_consistency_violation(text: str, actual_tier: str) -> bool:
-    """Scoped to the summary + risk_explanation fields only -- the two
-    places a tier claim can legitimately appear."""
+    """Scoped to risk_explanation only. Two layers: (1) exact "X risk"
+    phrase belonging to a DIFFERENT tier (existing), and (2) Phase 8D --
+    a severity word placed near "risk" that contradicts the actual tier
+    even via synonym (e.g. "significant and elevated risk" for an actual
+    LOW tier). Layer 2 is deliberately conservative/proximity-scoped, not
+    an exhaustive synonym ban, per "do not overfit to one phrase, if
+    uncertain fall back" -- a false positive here just costs one fallback
+    to deterministic text, never a wrong decision."""
     normalized = text.lower()
     for tier, phrases in _TIER_PHRASES.items():
         if tier == actual_tier:
             continue
         if any(p in normalized for p in phrases):
             return True
+
+    if actual_tier == "LOW" and _ELEVATED_RISK_RE.search(normalized):
+        return True
+    if actual_tier == "HIGH" and _MINIMIZING_RISK_RE.search(normalized):
+        return True
+    if actual_tier == "MODERATE" and _EXTREME_RISK_RE.search(normalized):
+        return True
     return False
 
 
@@ -323,37 +474,73 @@ def _destination_consistency_violation(text: str, actual_destination: str | None
     return False
 
 
-def _safety_state_consistency_violation(text: str, actual_state: str) -> bool:
-    """Scoped to the summary + safety_explanation fields only."""
+def _navigation_self_contradiction_violation(text: str, actual_destination: str | None) -> bool:
+    """Phase 8D Part 4 -- scoped to navigation_explanation only. Catches
+    describing a REAL destination (anything except null/
+    NO_PROACTIVE_NAVIGATION) as needing no action -- a self-contradiction
+    about the CORRECT destination that _destination_consistency_violation
+    (which only checks for naming a DIFFERENT destination) cannot catch."""
+    if not actual_destination or actual_destination == "NO_PROACTIVE_NAVIGATION":
+        return False
     normalized = text.lower()
+    return any(p in normalized for p in _NAVIGATION_NO_ACTION_PHRASES)
+
+
+def _safety_state_consistency_violation(text: str, actual_state: str) -> bool:
+    """Scoped to safety_explanation only. Phase 8D Part 2 -- three layers:
+    (1) a reassurance/all-clear phrasing that is NEVER acceptable for ANY
+    state (this alone closes the demonstrated real gap: a vague-but-wrong
+    "everything looks fine" for an actual OVERRIDE named no OTHER state's
+    phrase, so layer 2 below would have missed it); (2) an exact phrase
+    belonging to a DIFFERENT state (existing); (3) for OVERRIDE/CAUTION,
+    the text must POSITIVELY carry the required meaning for that state,
+    not just avoid contradicting it -- silence on the override trigger, or
+    on the incompleteness of current information, is itself a violation."""
+    normalized = text.lower()
+
+    if any(p in normalized for p in _SAFETY_REASSURANCE_FORBIDDEN_PHRASES):
+        return True
+
     for state, phrases in _SAFETY_STATE_PHRASES.items():
         if state == actual_state:
             continue
         if any(p in normalized for p in phrases):
             return True
+
+    required_any = _SAFETY_STATE_REQUIRED_ANY_PHRASES.get(actual_state)
+    if required_any and not any(p in normalized for p in required_any):
+        return True
+
     return False
 
 
 def _validate_genai_output(raw: dict, payload: dict) -> MemberExplanation | None:
     """Returns a MemberExplanation built from `raw` if it passes every
-    structural, policy, and consistency check; otherwise None (the caller
-    falls back to the deterministic explanation). Never raises.
+    structural, echo, policy, and consistency check; otherwise None (the
+    caller falls back to the deterministic explanation). Never raises.
 
-    Note: `raw["disclaimer"]` is checked only for presence/type (required
-    by the schema) and is otherwise IGNORED here -- the model's own
-    disclaimer text is never surfaced (see below), so it is deliberately
-    excluded from the policy/consistency text that follows; validating
-    text nobody ever sees would only create false-positive fallbacks."""
-    for key in _REQUIRED_KEYS:
+    Phase 8D: validation now has two independent layers, deliberately not
+    just one. Layer 1 (structured echo) is the PRIMARY guarantee -- three
+    enum fields the model must copy verbatim from its input, exact-match
+    checked against the authoritative decision, never inferred from free
+    text ("do not trust free text to carry decision semantics"). Layer 2
+    (free-text consistency) is defense in depth: even if the structured
+    fields are correct, the free-text sentences are independently checked
+    so a model that gets the enum right but writes contradictory prose
+    (e.g. correct `safety_state: "OVERRIDE"` alongside a
+    safety_explanation that says "everything looks fine") is still
+    rejected. Either layer failing alone is enough to reject."""
+    for key in _REQUIRED_TEXT_KEYS:
         value = raw.get(key)
         if not isinstance(value, str) or not value.strip():
             return None
         if len(value) > _MAX_FIELD_CHARS:
             return None
-    if not isinstance(raw.get("disclaimer"), str):
-        return None
+    for key in _REQUIRED_ENUM_KEYS:
+        if not isinstance(raw.get(key), str):
+            return None
 
-    combined = " ".join(raw[key] for key in _REQUIRED_KEYS)
+    combined = " ".join(raw[key] for key in _REQUIRED_TEXT_KEYS)
     if len(combined) > _MAX_COMBINED_CHARS:
         return None
 
@@ -364,18 +551,30 @@ def _validate_genai_output(raw: dict, payload: dict) -> MemberExplanation | None
 
     actual_tier = payload["risk"]["tier"]
     actual_destination = payload["navigation"].get("destination")
+    actual_destination_echo = actual_destination if actual_destination else "NONE"
     actual_state = payload["safety"]["state"]
     reason_codes = payload["navigation"].get("reason_codes") or []
 
-    # Scoped to each field's OWN dedicated sentence only -- deliberately
-    # excluding `summary`, which legitimately synthesizes language from
-    # ALL of risk/navigation/safety at once (e.g. "...despite telehealth
-    # availability reducing risk" is a correct restatement of a risk
-    # FACTOR, not a destination claim, but would otherwise collide with
-    # the TELEHEALTH destination phrase if summary were included here).
+    # --- Layer 1: structured enum echo, exact match, primary guarantee ---
+    if raw["risk_tier"] != actual_tier:
+        return None
+    if raw["navigation_destination"] != actual_destination_echo:
+        return None
+    if raw["safety_state"] != actual_state:
+        return None
+
+    # --- Layer 2: free-text consistency, scoped to each field's OWN
+    # dedicated sentence only -- deliberately excluding `summary`, which
+    # legitimately synthesizes language from ALL of risk/navigation/safety
+    # at once (e.g. "...despite telehealth availability reducing risk" is
+    # a correct restatement of a risk FACTOR, not a destination claim, but
+    # would otherwise collide with the TELEHEALTH destination phrase if
+    # summary were included here). ---
     if _tier_consistency_violation(raw["risk_explanation"], actual_tier):
         return None
     if _destination_consistency_violation(raw["navigation_explanation"], actual_destination, reason_codes):
+        return None
+    if _navigation_self_contradiction_violation(raw["navigation_explanation"], actual_destination):
         return None
     if _safety_state_consistency_violation(raw["safety_explanation"], actual_state):
         return None
@@ -385,9 +584,10 @@ def _validate_genai_output(raw: dict, payload: dict) -> MemberExplanation | None
         risk_explanation=raw["risk_explanation"].strip(),
         navigation_explanation=raw["navigation_explanation"].strip(),
         safety_explanation=raw["safety_explanation"].strip(),
-        # Never the model's own disclaimer text -- always the same
-        # centrally governed disclaimer the Safety & Policy Agent uses,
-        # so GenAI can never weaken or omit it.
+        # Never the model's own disclaimer text (not even requested
+        # anymore, see _response_schema) -- always the same centrally
+        # governed disclaimer the Safety & Policy Agent uses, so GenAI can
+        # never weaken or omit it.
         disclaimer=safety_policy.BASE_DISCLAIMER,
         explanation_source=ExplanationSource.GENAI,
     )
