@@ -1,0 +1,17 @@
+{
+  "phase": "7",
+  "model_frozen": "uc07-risk-synthetic-v1",
+  "transportation_barrier_recall_group0": 0.385557,
+  "transportation_barrier_recall_group1": 0.989796,
+  "telehealth_recall_available0": 0.820158,
+  "telehealth_recall_available1": 0.480649,
+  "clinical_burden_recall_0": 0.479905,
+  "clinical_burden_recall_3plus": 0.860294,
+  "disparity_decisions": {
+    "transportation_barrier": "INVESTIGATE",
+    "telehealth_available": "INVESTIGATE",
+    "clinical_burden": "INVESTIGATE"
+  },
+  "model_change_decision": "KEEP_MODEL_UNCHANGED",
+  "immutability_ok": true
+}

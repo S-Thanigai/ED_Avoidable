@@ -1,0 +1,12 @@
+{
+  "forbidden_columns_in_feature_list": [],
+  "passed": true,
+  "roc_auc_by_candidate": {
+    "logistic_regression": 0.699301,
+    "random_forest": 0.689716,
+    "xgboost": 0.689284,
+    "hist_gradient_boosting": 0.691499
+  },
+  "suspicious_performance_ceiling": 0.85,
+  "candidates_above_ceiling": {}
+}

@@ -1,0 +1,30 @@
+{
+  "phase": "6",
+  "model_frozen": "uc07-risk-synthetic-v1",
+  "moderate_threshold": 0.105986,
+  "high_threshold": 0.213252,
+  "safety_override_matrix": {
+    "rows": 68,
+    "all_passed": true
+  },
+  "missing_context_matrix": {
+    "rows": 18,
+    "all_passed": true
+  },
+  "prohibited_language_violations": 0,
+  "transportation_barrier": {
+    "group_0_recall_at_moderate": 0.385557,
+    "group_1_recall_at_moderate": 0.989796
+  },
+  "subgroups_evaluated": 17,
+  "input_validation_all_clean": true,
+  "probability_tier_invariants_passed": true,
+  "explanation_validation_passed": true,
+  "synthetic_disclosure_passed": true,
+  "population_run": {
+    "n": 10000,
+    "cross_agent_consistency": true
+  },
+  "determinism": true,
+  "immutability_ok": true
+}

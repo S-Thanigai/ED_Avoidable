@@ -1,0 +1,76 @@
+dimension,group_a,group_b,metric,value_a,value_b,delta_a_minus_b,classification
+transportation_barrier,transportation_barrier_1,transportation_barrier_0,recall_at_MODERATE,0.989796,0.385557,0.604239,INVESTIGATE
+transportation_barrier,transportation_barrier_1,transportation_barrier_0,fpr_at_MODERATE,0.959364,0.209893,0.749471,INVESTIGATE
+transportation_barrier,transportation_barrier_1,transportation_barrier_0,fnr_at_MODERATE,0.010204,0.614443,-0.604239,INVESTIGATE
+transportation_barrier,transportation_barrier_1,transportation_barrier_0,moderate_plus_selection_rate,0.968557,0.227023,0.741534,INVESTIGATE
+transportation_barrier,transportation_barrier_1,transportation_barrier_0,brier,0.189339,0.08549,0.103849,MONITOR
+telehealth_available,telehealth_available_1,telehealth_available_0,recall_at_MODERATE,0.480649,0.820158,-0.339509,INVESTIGATE
+telehealth_available,telehealth_available_1,telehealth_available_0,fpr_at_MODERATE,0.216376,0.6274,-0.411024,INVESTIGATE
+telehealth_available,telehealth_available_1,telehealth_available_0,fnr_at_MODERATE,0.519351,0.179842,0.339509,INVESTIGATE
+telehealth_available,telehealth_available_1,telehealth_available_0,moderate_plus_selection_rate,0.24435,0.667489,-0.423139,INVESTIGATE
+telehealth_available,telehealth_available_1,telehealth_available_0,brier,0.088966,0.143911,-0.054945,NO MATERIAL SIGNAL DETECTED
+gender,gender_F,gender_M,recall_at_MODERATE,0.622781,0.600634,0.022147,NO MATERIAL SIGNAL DETECTED
+gender,gender_F,gender_M,fpr_at_MODERATE,0.317831,0.296849,0.020982,NO MATERIAL SIGNAL DETECTED
+gender,gender_F,gender_M,fnr_at_MODERATE,0.377219,0.399366,-0.022147,NO MATERIAL SIGNAL DETECTED
+gender,gender_F,gender_M,moderate_plus_selection_rate,0.358379,0.335842,0.022537,NO MATERIAL SIGNAL DETECTED
+gender,gender_F,gender_M,brier,0.102755,0.1019,0.000855,NO MATERIAL SIGNAL DETECTED
+age,age_18_34,age_35_49,recall_at_MODERATE,0.594118,0.587459,0.006659,NO MATERIAL SIGNAL DETECTED
+age,age_18_34,age_35_49,fpr_at_MODERATE,0.295276,0.287104,0.008172,NO MATERIAL SIGNAL DETECTED
+age,age_18_34,age_35_49,fnr_at_MODERATE,0.405882,0.412541,-0.006659,NO MATERIAL SIGNAL DETECTED
+age,age_18_34,age_35_49,moderate_plus_selection_rate,0.330556,0.321214,0.009342,NO MATERIAL SIGNAL DETECTED
+age,age_18_34,age_35_49,brier,0.094275,0.094004,0.000271,NO MATERIAL SIGNAL DETECTED
+age,age_18_34,age_50_64,recall_at_MODERATE,0.594118,0.622066,-0.027948,NO MATERIAL SIGNAL DETECTED
+age,age_18_34,age_50_64,fpr_at_MODERATE,0.295276,0.297297,-0.002021,NO MATERIAL SIGNAL DETECTED
+age,age_18_34,age_50_64,fnr_at_MODERATE,0.405882,0.377934,0.027948,NO MATERIAL SIGNAL DETECTED
+age,age_18_34,age_50_64,moderate_plus_selection_rate,0.330556,0.341024,-0.010468,NO MATERIAL SIGNAL DETECTED
+age,age_18_34,age_50_64,brier,0.094275,0.103821,-0.009546,NO MATERIAL SIGNAL DETECTED
+age,age_18_34,age_65_plus,recall_at_MODERATE,0.594118,0.627451,-0.033333,NO MATERIAL SIGNAL DETECTED
+age,age_18_34,age_65_plus,fpr_at_MODERATE,0.295276,0.346983,-0.051707,NO MATERIAL SIGNAL DETECTED
+age,age_18_34,age_65_plus,fnr_at_MODERATE,0.405882,0.372549,0.033333,NO MATERIAL SIGNAL DETECTED
+age,age_18_34,age_65_plus,moderate_plus_selection_rate,0.330556,0.38893,-0.058374,NO MATERIAL SIGNAL DETECTED
+age,age_18_34,age_65_plus,brier,0.094275,0.113011,-0.018736,NO MATERIAL SIGNAL DETECTED
+age,age_35_49,age_50_64,recall_at_MODERATE,0.587459,0.622066,-0.034607,NO MATERIAL SIGNAL DETECTED
+age,age_35_49,age_50_64,fpr_at_MODERATE,0.287104,0.297297,-0.010193,NO MATERIAL SIGNAL DETECTED
+age,age_35_49,age_50_64,fnr_at_MODERATE,0.412541,0.377934,0.034607,NO MATERIAL SIGNAL DETECTED
+age,age_35_49,age_50_64,moderate_plus_selection_rate,0.321214,0.341024,-0.01981,NO MATERIAL SIGNAL DETECTED
+age,age_35_49,age_50_64,brier,0.094004,0.103821,-0.009817,NO MATERIAL SIGNAL DETECTED
+age,age_35_49,age_65_plus,recall_at_MODERATE,0.587459,0.627451,-0.039992,NO MATERIAL SIGNAL DETECTED
+age,age_35_49,age_65_plus,fpr_at_MODERATE,0.287104,0.346983,-0.059879,NO MATERIAL SIGNAL DETECTED
+age,age_35_49,age_65_plus,fnr_at_MODERATE,0.412541,0.372549,0.039992,NO MATERIAL SIGNAL DETECTED
+age,age_35_49,age_65_plus,moderate_plus_selection_rate,0.321214,0.38893,-0.067716,NO MATERIAL SIGNAL DETECTED
+age,age_35_49,age_65_plus,brier,0.094004,0.113011,-0.019007,NO MATERIAL SIGNAL DETECTED
+age,age_50_64,age_65_plus,recall_at_MODERATE,0.622066,0.627451,-0.005385,NO MATERIAL SIGNAL DETECTED
+age,age_50_64,age_65_plus,fpr_at_MODERATE,0.297297,0.346983,-0.049686,NO MATERIAL SIGNAL DETECTED
+age,age_50_64,age_65_plus,fnr_at_MODERATE,0.377934,0.372549,0.005385,NO MATERIAL SIGNAL DETECTED
+age,age_50_64,age_65_plus,moderate_plus_selection_rate,0.341024,0.38893,-0.047906,NO MATERIAL SIGNAL DETECTED
+age,age_50_64,age_65_plus,brier,0.103821,0.113011,-0.00919,NO MATERIAL SIGNAL DETECTED
+clinical_burden,clinical_burden_0,clinical_burden_1,recall_at_MODERATE,0.479905,0.579618,-0.099713,NO MATERIAL SIGNAL DETECTED
+clinical_burden,clinical_burden_0,clinical_burden_1,fpr_at_MODERATE,0.189758,0.31794,-0.128182,MONITOR
+clinical_burden,clinical_burden_0,clinical_burden_1,fnr_at_MODERATE,0.520095,0.420382,0.099713,NO MATERIAL SIGNAL DETECTED
+clinical_burden,clinical_burden_0,clinical_burden_1,moderate_plus_selection_rate,0.220924,0.349961,-0.129037,MONITOR
+clinical_burden,clinical_burden_0,clinical_burden_1,brier,0.089605,0.098495,-0.00889,NO MATERIAL SIGNAL DETECTED
+clinical_burden,clinical_burden_0,clinical_burden_2,recall_at_MODERATE,0.479905,0.747292,-0.267387,MONITOR
+clinical_burden,clinical_burden_0,clinical_burden_2,fpr_at_MODERATE,0.189758,0.46882,-0.279062,MONITOR
+clinical_burden,clinical_burden_0,clinical_burden_2,fnr_at_MODERATE,0.520095,0.252708,0.267387,MONITOR
+clinical_burden,clinical_burden_0,clinical_burden_2,moderate_plus_selection_rate,0.220924,0.516791,-0.295867,MONITOR
+clinical_burden,clinical_burden_0,clinical_burden_2,brier,0.089605,0.12878,-0.039175,NO MATERIAL SIGNAL DETECTED
+clinical_burden,clinical_burden_0,clinical_burden_3_plus,recall_at_MODERATE,0.479905,0.860294,-0.380389,INVESTIGATE
+clinical_burden,clinical_burden_0,clinical_burden_3_plus,fpr_at_MODERATE,0.189758,0.656716,-0.466958,INVESTIGATE
+clinical_burden,clinical_burden_0,clinical_burden_3_plus,fnr_at_MODERATE,0.520095,0.139706,0.380389,INVESTIGATE
+clinical_burden,clinical_burden_0,clinical_burden_3_plus,moderate_plus_selection_rate,0.220924,0.702479,-0.481555,INVESTIGATE
+clinical_burden,clinical_burden_0,clinical_burden_3_plus,brier,0.089605,0.139329,-0.049724,NO MATERIAL SIGNAL DETECTED
+clinical_burden,clinical_burden_1,clinical_burden_2,recall_at_MODERATE,0.579618,0.747292,-0.167674,MONITOR
+clinical_burden,clinical_burden_1,clinical_burden_2,fpr_at_MODERATE,0.31794,0.46882,-0.15088,MONITOR
+clinical_burden,clinical_burden_1,clinical_burden_2,fnr_at_MODERATE,0.420382,0.252708,0.167674,MONITOR
+clinical_burden,clinical_burden_1,clinical_burden_2,moderate_plus_selection_rate,0.349961,0.516791,-0.16683,MONITOR
+clinical_burden,clinical_burden_1,clinical_burden_2,brier,0.098495,0.12878,-0.030285,NO MATERIAL SIGNAL DETECTED
+clinical_burden,clinical_burden_1,clinical_burden_3_plus,recall_at_MODERATE,0.579618,0.860294,-0.280676,MONITOR
+clinical_burden,clinical_burden_1,clinical_burden_3_plus,fpr_at_MODERATE,0.31794,0.656716,-0.338776,INVESTIGATE
+clinical_burden,clinical_burden_1,clinical_burden_3_plus,fnr_at_MODERATE,0.420382,0.139706,0.280676,MONITOR
+clinical_burden,clinical_burden_1,clinical_burden_3_plus,moderate_plus_selection_rate,0.349961,0.702479,-0.352518,INVESTIGATE
+clinical_burden,clinical_burden_1,clinical_burden_3_plus,brier,0.098495,0.139329,-0.040834,NO MATERIAL SIGNAL DETECTED
+clinical_burden,clinical_burden_2,clinical_burden_3_plus,recall_at_MODERATE,0.747292,0.860294,-0.113002,MONITOR
+clinical_burden,clinical_burden_2,clinical_burden_3_plus,fpr_at_MODERATE,0.46882,0.656716,-0.187896,MONITOR
+clinical_burden,clinical_burden_2,clinical_burden_3_plus,fnr_at_MODERATE,0.252708,0.139706,0.113002,MONITOR
+clinical_burden,clinical_burden_2,clinical_burden_3_plus,moderate_plus_selection_rate,0.516791,0.702479,-0.185688,MONITOR
+clinical_burden,clinical_burden_2,clinical_burden_3_plus,brier,0.12878,0.139329,-0.010549,NO MATERIAL SIGNAL DETECTED

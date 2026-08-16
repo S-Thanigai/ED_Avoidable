@@ -1,0 +1,4 @@
+tier,member_count,population_pct,positive_count,observed_prevalence,lift_vs_overall_prevalence,mean_predicted_probability
+LOW,6500,0.65,553,0.085077,0.8881,0.07668
+MODERATE,2468,0.2468,270,0.1094,1.142,0.105925
+HIGH,1032,0.1032,135,0.130814,1.3655,0.141543

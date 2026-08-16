@@ -1,0 +1,40 @@
+{
+  "phase": "8B",
+  "objective": "Current safety context: single-member Evaluate Current Safety action + optional batch current_safety_context.csv",
+  "backend_endpoint_changed": "POST /uc07/decide (added optional safety_context_file field only)",
+  "backend_files_created": ["backend/agents/safety_context_csv.py"],
+  "backend_files_modified": ["backend/main.py"],
+  "frontend_files_created": [
+    "frontend/src/uc07/components/CurrentSafetyContextSection.tsx",
+    "frontend/src/uc07/components/SafetyContextCsvUpload.tsx"
+  ],
+  "frontend_files_modified": [
+    "frontend/src/uc07/Uc07View.tsx",
+    "frontend/src/uc07/components/MemberDetailsDrawer.tsx",
+    "frontend/src/uc07/api.ts",
+    "frontend/src/uc07/types.ts"
+  ],
+  "worked_example_verified_live": {
+    "M00001": "CLEAR",
+    "M00002": "CAUTION",
+    "M00003": "OVERRIDE",
+    "M00004": "CLEAR",
+    "M00005": "OVERRIDE"
+  },
+  "rejection_cases_verified_live": {
+    "invalid_binary_value": 422,
+    "invalid_triage_value": 422,
+    "unknown_member_id": 422,
+    "duplicate_member_id": 422
+  },
+  "backend_tests": {"baseline": 505, "new": 25, "total": 530, "failed": 0},
+  "frontend_tests": {"baseline": 48, "new": 15, "total": 63, "failed": 0},
+  "frontend_has_independent_safety_logic": false,
+  "risk_probability_changed_by_safety_context": false,
+  "risk_tier_changed_by_safety_context": false,
+  "navigation_logic_changed_by_safety_context": false,
+  "model_changed": false,
+  "thresholds_changed": false,
+  "navigation_rules_changed": false,
+  "model_and_dataset_hashes_unchanged": true
+}

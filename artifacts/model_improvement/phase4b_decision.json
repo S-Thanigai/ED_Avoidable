@@ -1,0 +1,22 @@
+{
+  "decision": {
+    "promote": false,
+    "pr_auc_gain": 0.000163,
+    "brier_change": -2.5e-05,
+    "v1_high_lift": 1.3257,
+    "v2_high_lift": 1.3655,
+    "lift_gain_relative": 0.03,
+    "tier_monotonic": true,
+    "calibration_preserved": true,
+    "pr_auc_case_met": false,
+    "tier_lift_case_met": false,
+    "reasons": [
+      "PR-AUC gain vs V1 VALIDATION: +0.0002 (promotion margin: >= 0.01)",
+      "Brier change vs V1 VALIDATION: -0.0000 (regression tolerance: <= 0.005)",
+      "HIGH-tier lift: V1=1.326x V2=1.365x (relative gain +0.030, margin: >= 0.15)",
+      "V2 tier monotonicity (LOW<=MODERATE<=HIGH observed prevalence): True",
+      "Suspicious performance flags: 0"
+    ]
+  },
+  "frozen_spec": null
+}

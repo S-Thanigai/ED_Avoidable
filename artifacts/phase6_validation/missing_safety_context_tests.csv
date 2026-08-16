@@ -1,0 +1,19 @@
+scenario,fields_supplied,safety_state,final_destination,expected,passed
+all fields missing,{},CAUTION,TELEHEALTH,CAUTION,True
+only red_flag supplied (safe value),"{""red_flag"": 0}",CAUTION,TELEHEALTH,CAUTION,True
+only icu supplied (safe value),"{""icu"": 0}",CAUTION,TELEHEALTH,CAUTION,True
+only admitted supplied (safe value),"{""admitted"": 0}",CAUTION,TELEHEALTH,CAUTION,True
+only major_procedure supplied (safe value),"{""major_procedure"": 0}",CAUTION,TELEHEALTH,CAUTION,True
+only triage_level supplied (safe value),"{""triage_level"": 4}",CAUTION,TELEHEALTH,CAUTION,True
+all safe except red_flag missing,"{""icu"": 0, ""admitted"": 0, ""major_procedure"": 0, ""triage_level"": 4}",CAUTION,TELEHEALTH,CAUTION,True
+all safe except icu missing,"{""red_flag"": 0, ""admitted"": 0, ""major_procedure"": 0, ""triage_level"": 4}",CAUTION,TELEHEALTH,CAUTION,True
+all safe except admitted missing,"{""red_flag"": 0, ""icu"": 0, ""major_procedure"": 0, ""triage_level"": 4}",CAUTION,TELEHEALTH,CAUTION,True
+all safe except major_procedure missing,"{""red_flag"": 0, ""icu"": 0, ""admitted"": 0, ""triage_level"": 4}",CAUTION,TELEHEALTH,CAUTION,True
+all safe except triage_level missing,"{""red_flag"": 0, ""icu"": 0, ""admitted"": 0, ""major_procedure"": 0}",CAUTION,TELEHEALTH,CAUTION,True
+"fully known, all safe","{""red_flag"": 0, ""icu"": 0, ""admitted"": 0, ""major_procedure"": 0, ""triage_level"": 4}",CLEAR,TELEHEALTH,CLEAR,True
+red_flag=1 + triage missing,"{""red_flag"": 1}",OVERRIDE,,OVERRIDE,True
+icu=1 + everything else missing,"{""icu"": 1}",OVERRIDE,,OVERRIDE,True
+major_procedure=1 + everything else missing,"{""major_procedure"": 1}",OVERRIDE,,OVERRIDE,True
+triage_level=1 + everything else missing,"{""triage_level"": 1}",OVERRIDE,,OVERRIDE,True
+"mixed: red_flag=0 known-safe, triage=1 known-override","{""red_flag"": 0, ""triage_level"": 1}",OVERRIDE,,OVERRIDE,True
+"mixed: 3 known-safe, 2 missing","{""red_flag"": 0, ""icu"": 0, ""admitted"": 0}",CAUTION,TELEHEALTH,CAUTION,True

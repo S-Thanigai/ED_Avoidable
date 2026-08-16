@@ -1,0 +1,7 @@
+candidate,calibration_method,roc_auc,pr_auc,brier_score,prevalence,pr_auc_no_skill_baseline,log_loss
+logistic_regression,uncalibrated,0.699301,0.32877,0.09267,0.1174,0.1174,0.324678
+logistic_regression,sigmoid,0.699372,0.328226,0.09271,0.1174,0.1174,0.324768
+logistic_regression,isotonic,0.699354,0.32407,0.092814,0.1174,0.1174,0.328503
+hist_gradient_boosting,uncalibrated,0.691499,0.320253,0.203174,0.1174,0.1174,0.600441
+hist_gradient_boosting,sigmoid,0.692534,0.320931,0.093357,0.1174,0.1174,0.326786
+hist_gradient_boosting,isotonic,0.691447,0.317722,0.093403,0.1174,0.1174,0.32721
