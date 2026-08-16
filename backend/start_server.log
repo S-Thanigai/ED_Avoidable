@@ -1,0 +1,15 @@
+INFO:     Started server process [31131]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8001 (Press CTRL+C to quit)
+INFO:     127.0.0.1:59913 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59966 - "POST /predict-demo HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59968 - "POST /explain-member HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59969 - "POST /explain-member HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59986 - "POST /explain-member HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59987 - "POST /explain-member HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60015 - "POST /predict-json HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60017 - "POST /explain-member HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60016 - "POST /explain-member HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60016 - "POST /explain-member HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60017 - "POST /explain-member HTTP/1.1" 200 OK

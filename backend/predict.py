@@ -79,6 +79,8 @@ def _compute_shap_explanations(pipeline, X: pd.DataFrame) -> pd.DataFrame:
                 "shap_value_3",
                 "shap_explanation_summary",
                 "shap_explanation_json",
+                "top_positive_factors",
+                "top_negative_factors",
             ]
         )
 
@@ -120,6 +122,19 @@ def _compute_shap_explanations(pipeline, X: pd.DataFrame) -> pd.DataFrame:
             [f"{feat} {('increases' if score > 0 else 'reduces')} risk ({score:.4f})" for feat, score in zip(top_features, top_scores)]
         ) if top_features else "No strong SHAP drivers were detected."
 
+        pos_list = []
+        neg_list = []
+        for idx in range(len(feature_names)):
+            feat = feature_names[idx]
+            val = float(row_values[idx])
+            if val > 0.0001:
+                pos_list.append({"feature": feat, "shap_value": round(val, 4)})
+            elif val < -0.0001:
+                neg_list.append({"feature": feat, "shap_value": round(val, 4)})
+
+        pos_list = sorted(pos_list, key=lambda x: abs(x["shap_value"]), reverse=True)[:3]
+        neg_list = sorted(neg_list, key=lambda x: abs(x["shap_value"]), reverse=True)[:3]
+
         rows.append(
             {
                 "shap_feature_1": top_features[0] if len(top_features) > 0 else "",
@@ -130,6 +145,8 @@ def _compute_shap_explanations(pipeline, X: pd.DataFrame) -> pd.DataFrame:
                 "shap_value_3": round(float(top_scores[2]), 4) if len(top_scores) > 2 else 0.0,
                 "shap_explanation_summary": summary,
                 "shap_explanation_json": json.dumps(feature_details),
+                "top_positive_factors": json.dumps(pos_list),
+                "top_negative_factors": json.dumps(neg_list),
             }
         )
 
@@ -271,6 +288,45 @@ def predict(
     clinical_cols = ["diabetes", "copd", "hypertension", "chf", "asthma", "ckd"]
     result["clinical_burden"] = result[clinical_cols].fillna(0).sum(axis=1)
 
+    # Calculate safety guardrails
+    safety_members = set()
+    if ed_visits_raw is not None and not ed_visits_raw.empty:
+        # High acuity indicators: red_flag, icu, major_procedure, admitted, or triage_level <= 2
+        high_acuity = ed_visits_raw[
+            (ed_visits_raw["red_flag"] == 1) |
+            (ed_visits_raw["icu"] == 1) |
+            (ed_visits_raw["major_procedure"] == 1) |
+            (ed_visits_raw["admitted"] == 1) |
+            (ed_visits_raw["triage_level"].isin([1, 2]))
+        ]
+        safety_members = set(high_acuity["member_id"].unique())
+
+    result["safety_guardrail_flag"] = result["member_id"].apply(lambda mid: mid in safety_members)
+    result["safety_guardrail_message"] = result["safety_guardrail_flag"].apply(
+        lambda flag: "Clinical/Emergency care indicators present — DO NOT discourage ED. This patient's risk score reflects utilization pattern only, not a recommendation to avoid the ED." if flag else None
+    )
+
+    # Calculate navigation opportunities
+    def _build_navigation_opportunities(row):
+        if row.get("safety_guardrail_flag", False):
+            return json.dumps([])
+
+        opps = []
+        if int(row.get("telehealth_available", 0) or 0) == 1:
+            opps.append("Telehealth access opportunity")
+        if int(row.get("transportation_barrier", 0) or 0) == 1:
+            opps.append("Transportation-support resource opportunity")
+
+        pcp_dist = float(row.get("pcp_distance_miles", 0) or 0)
+        urgent_dist = float(row.get("urgent_care_distance_miles", 0) or 0)
+        if pcp_dist > 5:
+            opps.append("PCP follow-up/navigation opportunity")
+        if urgent_dist > 5:
+            opps.append("Urgent Care navigation opportunity")
+        return json.dumps(opps)
+
+    result["navigation_opportunities"] = result.apply(_build_navigation_opportunities, axis=1)
+
     columns = [
         "member_id",
         "risk_probability",
@@ -297,6 +353,9 @@ def predict(
         "clinical_burden",
         "recommended_alternative_care",
         "alternative_care_reason",
+        "safety_guardrail_flag",
+        "safety_guardrail_message",
+        "navigation_opportunities",
     ]
 
     if include_shap:
@@ -311,6 +370,31 @@ def predict(
             "shap_value_3",
             "shap_explanation_summary",
             "shap_explanation_json",
+            "top_positive_factors",
+            "top_negative_factors",
+        ]
+    else:
+        result["shap_feature_1"] = ""
+        result["shap_value_1"] = 0.0
+        result["shap_feature_2"] = ""
+        result["shap_value_2"] = 0.0
+        result["shap_feature_3"] = ""
+        result["shap_value_3"] = 0.0
+        result["shap_explanation_summary"] = "SHAP explanations not requested."
+        result["shap_explanation_json"] = "[]"
+        result["top_positive_factors"] = "[]"
+        result["top_negative_factors"] = "[]"
+        columns += [
+            "shap_feature_1",
+            "shap_value_1",
+            "shap_feature_2",
+            "shap_value_2",
+            "shap_feature_3",
+            "shap_value_3",
+            "shap_explanation_summary",
+            "shap_explanation_json",
+            "top_positive_factors",
+            "top_negative_factors",
         ]
 
     result[["recommended_alternative_care", "alternative_care_reason"]] = result.apply(
