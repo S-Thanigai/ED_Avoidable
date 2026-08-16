@@ -1,0 +1,101 @@
+.current-safety-context {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.current-safety-context__heading {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+}
+
+.current-safety-context__summary {
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.current-safety-context__summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+
+.current-safety-context__summary-row span {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.current-safety-context__state {
+  font-weight: 800;
+}
+.current-safety-context__state--clear {
+  color: var(--status-good);
+}
+.current-safety-context__state--caution {
+  color: var(--status-warning);
+}
+.current-safety-context__state--override {
+  color: var(--status-critical);
+}
+
+.current-safety-context__fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px 16px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.current-safety-context__fields dt {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.current-safety-context__fields dd {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--text-primary);
+}
+
+.current-safety-context__error {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--status-critical);
+}
+
+.current-safety-context__evaluate {
+  align-self: flex-start;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--text-on-accent);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.current-safety-context__evaluate:hover:not(:disabled) {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+.current-safety-context__evaluate:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

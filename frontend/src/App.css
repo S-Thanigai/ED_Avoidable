@@ -10,3 +10,46 @@
   flex-direction: column;
   gap: 20px;
 }
+
+.tab-nav {
+  display: flex;
+  gap: 4px;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 12px 24px 0;
+}
+
+.tab-nav__tab {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: var(--surface-sunken);
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tab-nav__tab--active {
+  background: var(--surface-page);
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--surface-page);
+  margin-bottom: -1px;
+}
+
+.legacy-banner {
+  background: var(--surface-sunken);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.legacy-banner code {
+  background: var(--surface-card);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 0.8em;
+}

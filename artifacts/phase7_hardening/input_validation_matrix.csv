@@ -1,0 +1,21 @@
+case,layer,result,rejected,issue_count
+valid data (baseline),members,PASS,False,0
+age negative,members,REJECTED,True,1
+"age = 0 (boundary, valid)",members,PASS,False,0
+"age = 120 (boundary, valid)",members,PASS,False,0
+age = 121 (just above boundary),members,REJECTED,True,1
+age NaN,members,REJECTED,True,1
+transportation_barrier = 7,members,REJECTED,True,1
+telehealth_available = -1,members,REJECTED,True,1
+pcp_distance_miles negative,members,REJECTED,True,1
+"pcp_distance_miles = 500 (boundary, valid)",members,PASS,False,0
+pcp_distance_miles = 500.01 (just above boundary),members,REJECTED,True,1
+urgent_care_distance_miles = inf,members,REJECTED,True,1
+num_chronic_conditions inconsistent with flags,members,REJECTED,True,1
+num_chronic_conditions column absent (derivable),members,PASS,False,0
+valid data (baseline),ed_visits,PASS,False,0
+triage_level = 0,ed_visits,REJECTED,True,1
+triage_level = 6,ed_visits,REJECTED,True,1
+"triage_level in-window row = 9 (Phase 6 gap, now closed)",ed_visits,REJECTED,True,1
+red_flag = 2,ed_visits,REJECTED,True,1
+icu = NaN,ed_visits,REJECTED,True,1

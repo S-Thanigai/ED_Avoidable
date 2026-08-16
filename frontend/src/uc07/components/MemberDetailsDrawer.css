@@ -1,0 +1,63 @@
+.member-details-drawer__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: flex-end;
+  z-index: 50;
+}
+
+.member-details-drawer {
+  width: min(560px, 100%);
+  height: 100%;
+  background: var(--surface-page);
+  padding: 20px;
+  overflow-y: auto;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.member-details-drawer__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.member-details-drawer__eyebrow {
+  display: block;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.member-details-drawer__title {
+  margin: 2px 0 0;
+  font-size: 1.25rem;
+  color: var(--text-primary);
+}
+
+.member-details-drawer__close {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  width: 32px;
+  height: 32px;
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+.member-details-drawer__close:hover {
+  background: var(--surface-card-hover);
+  color: var(--text-primary);
+}
+
+.member-details-drawer__body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}

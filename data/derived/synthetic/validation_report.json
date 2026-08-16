@@ -1,0 +1,269 @@
+{
+  "per_snapshot": {
+    "train": {
+      "no_future_events_in_observation": {
+        "passed": true,
+        "violation_count": 0
+      },
+      "no_future_care_events_in_observation": {
+        "passed": true,
+        "violation_count": 0
+      },
+      "no_past_target_events": {
+        "passed": true,
+        "violation_count": 0
+      },
+      "no_observation_outcome_overlap": {
+        "passed": true,
+        "violation_count": 0
+      },
+      "forbidden_columns_absent": {
+        "passed": true,
+        "present": []
+      },
+      "identifier_not_feature": {
+        "passed": true,
+        "present": []
+      },
+      "index_date_not_feature": {
+        "passed": true
+      },
+      "target_not_feature": {
+        "passed": true,
+        "present": []
+      },
+      "legacy_target_absent": {
+        "passed": true
+      },
+      "diagnosis_crosstab_absent": {
+        "passed": true,
+        "present": []
+      },
+      "no_global_max_date_index": {
+        "passed": true,
+        "is_approved_index_date": true,
+        "equals_global_max_date": false
+      },
+      "snapshot_reconciliation": {
+        "passed": true,
+        "details": {
+          "prior_ed_count_270d": {
+            "passed": true,
+            "mismatch_count": 0
+          },
+          "prior_ed_count_30d": {
+            "passed": true,
+            "mismatch_count": 0
+          },
+          "prior_potentially_avoidable_ed_count_270d": {
+            "passed": true,
+            "mismatch_count": 0
+          },
+          "future_potentially_avoidable_ed_90d": {
+            "passed": true,
+            "mismatch_count": 0
+          }
+        }
+      },
+      "no_duplicate_member_ids": {
+        "passed": true,
+        "duplicate_count": 0
+      },
+      "no_missing_member_ids": {
+        "passed": true,
+        "missing_count": 0
+      },
+      "no_infinite_values": {
+        "passed": true,
+        "columns": []
+      },
+      "no_negative_counts": {
+        "passed": true,
+        "columns": []
+      },
+      "no_negative_recency": {
+        "passed": true,
+        "columns": []
+      }
+    },
+    "validation": {
+      "no_future_events_in_observation": {
+        "passed": true,
+        "violation_count": 0
+      },
+      "no_future_care_events_in_observation": {
+        "passed": true,
+        "violation_count": 0
+      },
+      "no_past_target_events": {
+        "passed": true,
+        "violation_count": 0
+      },
+      "no_observation_outcome_overlap": {
+        "passed": true,
+        "violation_count": 0
+      },
+      "forbidden_columns_absent": {
+        "passed": true,
+        "present": []
+      },
+      "identifier_not_feature": {
+        "passed": true,
+        "present": []
+      },
+      "index_date_not_feature": {
+        "passed": true
+      },
+      "target_not_feature": {
+        "passed": true,
+        "present": []
+      },
+      "legacy_target_absent": {
+        "passed": true
+      },
+      "diagnosis_crosstab_absent": {
+        "passed": true,
+        "present": []
+      },
+      "no_global_max_date_index": {
+        "passed": true,
+        "is_approved_index_date": true,
+        "equals_global_max_date": false
+      },
+      "snapshot_reconciliation": {
+        "passed": true,
+        "details": {
+          "prior_ed_count_270d": {
+            "passed": true,
+            "mismatch_count": 0
+          },
+          "prior_ed_count_30d": {
+            "passed": true,
+            "mismatch_count": 0
+          },
+          "prior_potentially_avoidable_ed_count_270d": {
+            "passed": true,
+            "mismatch_count": 0
+          },
+          "future_potentially_avoidable_ed_90d": {
+            "passed": true,
+            "mismatch_count": 0
+          }
+        }
+      },
+      "no_duplicate_member_ids": {
+        "passed": true,
+        "duplicate_count": 0
+      },
+      "no_missing_member_ids": {
+        "passed": true,
+        "missing_count": 0
+      },
+      "no_infinite_values": {
+        "passed": true,
+        "columns": []
+      },
+      "no_negative_counts": {
+        "passed": true,
+        "columns": []
+      },
+      "no_negative_recency": {
+        "passed": true,
+        "columns": []
+      }
+    },
+    "test": {
+      "no_future_events_in_observation": {
+        "passed": true,
+        "violation_count": 0
+      },
+      "no_future_care_events_in_observation": {
+        "passed": true,
+        "violation_count": 0
+      },
+      "no_past_target_events": {
+        "passed": true,
+        "violation_count": 0
+      },
+      "no_observation_outcome_overlap": {
+        "passed": true,
+        "violation_count": 0
+      },
+      "forbidden_columns_absent": {
+        "passed": true,
+        "present": []
+      },
+      "identifier_not_feature": {
+        "passed": true,
+        "present": []
+      },
+      "index_date_not_feature": {
+        "passed": true
+      },
+      "target_not_feature": {
+        "passed": true,
+        "present": []
+      },
+      "legacy_target_absent": {
+        "passed": true
+      },
+      "diagnosis_crosstab_absent": {
+        "passed": true,
+        "present": []
+      },
+      "no_global_max_date_index": {
+        "passed": true,
+        "is_approved_index_date": true,
+        "equals_global_max_date": false
+      },
+      "snapshot_reconciliation": {
+        "passed": true,
+        "details": {
+          "prior_ed_count_270d": {
+            "passed": true,
+            "mismatch_count": 0
+          },
+          "prior_ed_count_30d": {
+            "passed": true,
+            "mismatch_count": 0
+          },
+          "prior_potentially_avoidable_ed_count_270d": {
+            "passed": true,
+            "mismatch_count": 0
+          },
+          "future_potentially_avoidable_ed_90d": {
+            "passed": true,
+            "mismatch_count": 0
+          }
+        }
+      },
+      "no_duplicate_member_ids": {
+        "passed": true,
+        "duplicate_count": 0
+      },
+      "no_missing_member_ids": {
+        "passed": true,
+        "missing_count": 0
+      },
+      "no_infinite_values": {
+        "passed": true,
+        "columns": []
+      },
+      "no_negative_counts": {
+        "passed": true,
+        "columns": []
+      },
+      "no_negative_recency": {
+        "passed": true,
+        "columns": []
+      }
+    }
+  },
+  "cross_snapshot": {
+    "schema_consistency": {
+      "passed": true,
+      "mismatches": {}
+    }
+  },
+  "all_passed": true
+}

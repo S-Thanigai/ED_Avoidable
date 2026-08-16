@@ -1,0 +1,25 @@
+{
+  "lint": {
+    "tool": "oxlint",
+    "result": "PASS",
+    "errors": 0,
+    "warnings": 0
+  },
+  "typecheck": {
+    "tool": "tsc -b",
+    "result": "PASS"
+  },
+  "production_build": {
+    "tool": "vite build",
+    "result": "PASS",
+    "output": {
+      "dist/index.html": "0.67 kB",
+      "dist/assets/index-*.css": "29.18 kB (gzip 5.15 kB)",
+      "dist/assets/index-*.js": "229.12 kB (gzip 69.76 kB)"
+    }
+  },
+  "pre_change_baseline": {
+    "lint": "PASS (clean)",
+    "build": "PASS (clean, 209.23 kB JS pre-Phase-8)"
+  }
+}

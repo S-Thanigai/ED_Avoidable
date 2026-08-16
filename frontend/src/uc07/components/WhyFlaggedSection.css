@@ -1,0 +1,77 @@
+.why-flagged {
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.why-flagged__heading {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.why-flagged__note {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.why-flagged__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.why-flagged__factor {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.why-flagged__arrow {
+  font-weight: 700;
+  width: 1em;
+  text-align: center;
+}
+
+.why-flagged__factor--up .why-flagged__arrow {
+  color: var(--status-critical, #c0392b);
+}
+
+.why-flagged__factor--down .why-flagged__arrow {
+  color: var(--status-good, #2e7d32);
+}
+
+.why-flagged__label {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.why-flagged__direction-text {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.why-flagged__method {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.why-flagged__caveat {
+  margin: 0;
+  font-size: 0.76rem;
+  font-style: italic;
+  color: var(--text-muted);
+}

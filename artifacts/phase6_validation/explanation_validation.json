@@ -1,0 +1,9 @@
+{
+  "members_checked": 200,
+  "max_factor_count_observed": 3,
+  "max_factor_count_allowed": 3,
+  "max_factor_count_respected": true,
+  "causal_wording_violations": [],
+  "leakage_token_violations": [],
+  "passed": true
+}

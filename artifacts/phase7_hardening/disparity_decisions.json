@@ -1,0 +1,20 @@
+{
+  "transportation_barrier": {
+    "issue": "transportation_barrier (1 vs 0)",
+    "recall_delta": 0.604239,
+    "prevalence_delta": 0.204579,
+    "classification": "INVESTIGATE"
+  },
+  "telehealth_available": {
+    "issue": "telehealth_available (0 vs 1, inverse direction)",
+    "recall_delta": 0.339509,
+    "prevalence_delta": 0.10212,
+    "classification": "INVESTIGATE"
+  },
+  "clinical_burden": {
+    "issue": "clinical_burden (3+ vs 0)",
+    "recall_delta": 0.380389,
+    "prevalence_delta": 0.117378,
+    "classification": "INVESTIGATE"
+  }
+}

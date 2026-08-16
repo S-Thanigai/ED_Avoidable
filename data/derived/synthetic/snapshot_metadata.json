@@ -1,0 +1,101 @@
+{
+  "phase": "Phase 3 -- Point-in-Time ML Data Pipeline",
+  "version": "phase3-v1",
+  "dataset_id": "synthetic_uc07_v1",
+  "synthetic": true,
+  "generated_at_utc": "2026-08-15T17:56:15.808885+00:00",
+  "raw_dataset_sha256": {
+    "raw_members.csv": "00cb4023eb20876fd9b9cd2b3b3e283c8e6681f1452a6c3e9cbfda37f0bd2373",
+    "raw_ed_visits.csv": "bb3c9505a836b8c70813aa2fdd62f628bd871f657fa1dfca1330799d27ce88c0",
+    "raw_care_history.csv": "20fdcb836f6abbbd1b1b70d7c1f7cd2279f5c519251322944b0ca7109a66db1a"
+  },
+  "observation_window_days": 270,
+  "outcome_window_days": 90,
+  "boundary_semantics": {
+    "observation": "index_date - observation_window_days <= event_date < index_date",
+    "outcome": "index_date <= event_date < index_date + outcome_window_days"
+  },
+  "snapshot_index_dates": {
+    "train": "2025-10-05",
+    "validation": "2026-01-03",
+    "test": "2026-04-03"
+  },
+  "target_column": "future_potentially_avoidable_ed_90d",
+  "target_definition": "1 if the member has >=1 ED encounter classified POTENTIALLY_AVOIDABLE in the snapshot's 90-day outcome window, else 0. UNCERTAIN and PROTECTED_OR_HIGH_ACUITY outcome-window encounters never create a positive label on their own.",
+  "encounter_state_definition": {
+    "PROTECTED_OR_HIGH_ACUITY": "red_flag==1 OR icu==1 OR admitted==1 OR major_procedure==1 OR triage_level in {1,2} (absolute precedence)",
+    "POTENTIALLY_AVOIDABLE": "no safety exclusion AND triage_level in {4,5}",
+    "UNCERTAIN": "no safety exclusion AND triage_level == 3"
+  },
+  "snapshots": {
+    "train": {
+      "index_date": "2025-10-05",
+      "observation_start": "2025-01-08",
+      "observation_end_exclusive": "2025-10-05",
+      "outcome_start_inclusive": "2025-10-05",
+      "outcome_end_exclusive": "2026-01-03",
+      "row_count": 10000,
+      "positive_count": 1194,
+      "negative_count": 8806,
+      "prevalence": 0.1194,
+      "feature_count": 59,
+      "total_outcome_ed_encounters": 2332,
+      "potentially_avoidable": 1511,
+      "protected_or_high_acuity": 405,
+      "uncertain": 416
+    },
+    "validation": {
+      "index_date": "2026-01-03",
+      "observation_start": "2025-04-08",
+      "observation_end_exclusive": "2026-01-03",
+      "outcome_start_inclusive": "2026-01-03",
+      "outcome_end_exclusive": "2026-04-03",
+      "row_count": 10000,
+      "positive_count": 1174,
+      "negative_count": 8826,
+      "prevalence": 0.1174,
+      "feature_count": 59,
+      "total_outcome_ed_encounters": 2415,
+      "potentially_avoidable": 1510,
+      "protected_or_high_acuity": 429,
+      "uncertain": 476
+    },
+    "test": {
+      "index_date": "2026-04-03",
+      "observation_start": "2025-07-07",
+      "observation_end_exclusive": "2026-04-03",
+      "outcome_start_inclusive": "2026-04-03",
+      "outcome_end_exclusive": "2026-07-02",
+      "row_count": 10000,
+      "positive_count": 1307,
+      "negative_count": 8693,
+      "prevalence": 0.1307,
+      "feature_count": 59,
+      "total_outcome_ed_encounters": 2748,
+      "potentially_avoidable": 1753,
+      "protected_or_high_acuity": 500,
+      "uncertain": 495
+    }
+  },
+  "member_overlap": {
+    "member_id_overlap_all_snapshots": {
+      "train_and_validation": 10000,
+      "train_and_test": 10000,
+      "validation_and_test": 10000
+    },
+    "member_id_overlap_all_three": 10000,
+    "positive_label_overlap_pairwise": {
+      "train_and_validation": 340,
+      "train_and_test": 313,
+      "validation_and_test": 358
+    },
+    "note": "Members legitimately appear in more than one snapshot because all three snapshots draw from the same population at different, non-overlapping points in time. This is NOT outcome leakage -- each snapshot's features and target are computed strictly from that snapshot's own window. See docs/02_UC07_AND_DATA_DESIGN.md section 9.4."
+  },
+  "validation_report_summary": {
+    "all_passed": true
+  },
+  "code_version": {
+    "python": "3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]",
+    "pandas": "3.0.5"
+  }
+}

@@ -1,0 +1,9 @@
+feature,coefficient,rank_by_abs_coefficient,total_features,mean_contribution,median_contribution,std_contribution,min_contribution,max_contribution
+transportation_barrier,0.223474,1,60,0.0,-0.098329,0.223474,-0.098329,0.507893
+telehealth_available,-0.180445,2,60,0.0,-0.102318,0.180445,-0.102318,0.318226
+pcp_distance_miles,0.118409,3,60,-0.0,-0.023615,0.118409,-0.174244,0.571369
+urgent_care_distance_miles,0.053567,17,60,-0.0,-0.011301,0.053567,-0.07689,0.269196
+prior_potentially_avoidable_ed_count_270d,0.109694,5,60,0.002009,-0.046935,0.111027,-0.046935,1.364471
+prior_potentially_avoidable_ed_count_180d,-0.058629,14,60,-0.000247,0.022406,0.057021,-0.802438,0.022406
+clinical_burden,0.06586,11,60,0.0,0.007227,0.06586,-0.064469,0.29401
+access_burden,0.05666,15,60,-0.0,-0.039915,0.05666,-0.039915,0.189922

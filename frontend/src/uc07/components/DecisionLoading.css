@@ -1,0 +1,23 @@
+.decision-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 18px;
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+}
+
+.decision-loading__spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  animation: decision-loading-spin 0.8s linear infinite;
+}
+
+@keyframes decision-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -1,0 +1,106 @@
+.risk-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.risk-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.risk-card__eyebrow {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.risk-card__tier {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.risk-card__tier-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.risk-card__tier--low {
+  background: var(--status-good-bg);
+  color: var(--status-good);
+}
+.risk-card__tier--low .risk-card__tier-dot {
+  background: var(--status-good);
+}
+
+.risk-card__tier--moderate {
+  background: var(--status-warning-bg);
+  color: var(--status-warning);
+}
+.risk-card__tier--moderate .risk-card__tier-dot {
+  background: var(--status-warning);
+}
+
+.risk-card__tier--high {
+  background: var(--status-critical-bg);
+  color: var(--status-critical);
+}
+.risk-card__tier--high .risk-card__tier-dot {
+  background: var(--status-critical);
+}
+
+.risk-card__probability {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0;
+}
+
+.risk-card__probability-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.risk-card__probability-label {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.risk-card__factors-title {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.risk-card__factors-list {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-primary);
+  font-size: 0.92rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.risk-card__footnote {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}

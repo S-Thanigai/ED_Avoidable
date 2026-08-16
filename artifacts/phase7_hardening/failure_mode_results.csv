@@ -1,0 +1,10 @@
+failure_mode,behavior,conservative
+member data invalid (age/binary/distance/chronic-count),"422, structured issue list, no scoring attempted",True
+"safety context invalid (binary/triage out of range, unknown field, non-finite)","422 via Pydantic schema, no coercion to a safe-looking value",True
+feature generation incomplete (required raw column missing),"KeyError propagates from backend/pit/features.py, never silently scores with fabricated data",True
+model metadata incompatible (feature/version/threshold mismatch),"ModelIncompatibleError at RiskDetectionAgent construction, surfaced as 503",True
+model artifact missing,"ModelIncompatibleError, 503, never falls back to legacy model",True
+threshold metadata missing/invalid ordering,ModelIncompatibleError at construction,True
+Navigation Agent receives malformed/incomplete RiskAssessment-derived row,"Defensive defaults (e.g. missing distance -> 99.0 = far), never raises, never fabricates a favorable/aggressive recommendation",True
+Safety Agent receives malformed NavigationDecision,Pure deterministic logic over typed dataclass fields; language policy applied regardless of upstream content,True
+Risk Agent raises mid-orchestration,"Propagates uncaught to the API's try/except, converted to a clean error response, never fabricates a decision",True
