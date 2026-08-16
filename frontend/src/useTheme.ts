@@ -7,7 +7,10 @@ const STORAGE_KEY = "ed-navigator-theme";
 function getInitialTheme(): Theme {
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored === "light" || stored === "dark") return stored;
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  // Dark is this application's primary, designed-for-first experience
+  // (a light-mode-only OS preference doesn't override that default --
+  // it's still one click away via the theme toggle).
+  return "dark";
 }
 
 export function useTheme() {

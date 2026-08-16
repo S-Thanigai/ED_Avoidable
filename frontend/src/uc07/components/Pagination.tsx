@@ -1,6 +1,9 @@
 import "./Pagination.css";
 
-export const PAGE_SIZE = 25;
+// Part 16/Part 5: exactly 15 members per page (page 1 = 1-15, page 2 =
+// 16-30, ...) -- deliberately smaller than the previous 25 so a page of
+// members stays scannable without scrolling on common viewport heights.
+export const PAGE_SIZE = 15;
 
 interface PaginationProps {
   page: number;

@@ -22,7 +22,6 @@ import {
   DEFAULT_FILTERS,
   DEFAULT_SORT,
   filterDecisions,
-  isFiltersActive,
   sortDecisions,
   type MemberFiltersState,
   type SortState,
@@ -48,6 +47,12 @@ export function Uc07View() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<UC07ApiError | Error | null>(null);
   const [response, setResponse] = useState<UC07DecideResponse | null>(null);
+  // Setup -> Results transition (Section 8): once a run succeeds, the
+  // Data Inputs section compacts into a one-line summary so the
+  // population results -- not the upload UI -- occupy the top of the
+  // viewport. "Change files" re-expands it without discarding the
+  // results currently on screen; only running again replaces them.
+  const [inputsExpanded, setInputsExpanded] = useState(true);
 
   const [filters, setFiltersState] = useState<MemberFiltersState>(DEFAULT_FILTERS);
   const [sort, setSort] = useState<SortState>(DEFAULT_SORT);
@@ -93,6 +98,7 @@ export function Uc07View() {
         safetyContextFile: safetyContextCsvFile ?? undefined,
       });
       setResponse(result);
+      setInputsExpanded(false);
       if (result.decisions.length === 1) setSelectedMemberId(result.decisions[0].member_id);
     } catch (err) {
       setError(err instanceof UC07ApiError || err instanceof Error ? err : new Error("Something went wrong."));
@@ -169,13 +175,11 @@ export function Uc07View() {
   }, [clampedPage, page]);
 
   const paged = useMemo(() => sorted.slice((clampedPage - 1) * PAGE_SIZE, clampedPage * PAGE_SIZE), [sorted, clampedPage]);
-  const filtersActive = isFiltersActive(filters);
 
   const selectedDecision: FinalUC07Decision | null = selectedMemberId
     ? (effectiveDecisions.find((d) => d.member_id === selectedMemberId) ?? null)
     : null;
 
-  const allSelected = Boolean(files.members && files.edVisits && files.care);
   const isBatch = allDecisions.length > 1;
 
   return (
@@ -187,32 +191,83 @@ export function Uc07View() {
         <ModelInfo />
       </div>
 
-      <h2 className="uc07-view__section-heading">Historical data <span className="uc07-view__required-badge">Required</span></h2>
-      <UploadPanel files={files} onFileChange={handleFileChange} onRun={handleRun} loading={loading} />
+      {inputsExpanded || !response ? (
+        <section className="uc07-view__data-inputs" aria-label="Data inputs setup">
+          <h2 className="uc07-view__section-heading">
+            Data Inputs <span className="uc07-view__required-badge">Required</span>
+          </h2>
 
-      <SafetyContextCsvUpload file={safetyContextCsvFile} onChange={setSafetyContextCsvFile} disabled={loading} />
+          <section className="uc07-view__options">
+            <label className="uc07-view__member-field">
+              <span>Member ID (optional — leave blank to score the full population)</span>
+              <input
+                type="text"
+                value={memberId}
+                onChange={(e) => setMemberId(e.target.value)}
+                placeholder="e.g. M00001"
+                disabled={loading}
+              />
+            </label>
+          </section>
 
-      <section className="uc07-view__options">
-        <label className="uc07-view__member-field">
-          <span>Member ID (optional — leave blank to score the full population)</span>
-          <input
-            type="text"
-            value={memberId}
-            onChange={(e) => setMemberId(e.target.value)}
-            placeholder="e.g. M00001"
-            disabled={loading}
-          />
-        </label>
-      </section>
+          <UploadPanel files={files} onFileChange={handleFileChange} onRun={handleRun} loading={loading} />
 
-      <button
-        type="button"
-        className="run-button uc07-view__run"
-        disabled={!allSelected || loading}
-        onClick={handleRun}
-      >
-        {loading ? "Getting decision…" : "Get UC07 decision"}
-      </button>
+          <SafetyContextCsvUpload file={safetyContextCsvFile} onChange={setSafetyContextCsvFile} disabled={loading} />
+        </section>
+      ) : (
+        <section className="uc07-view__data-inputs-summary" aria-label="Data sources (loaded)">
+          <span className="uc07-view__data-inputs-summary-heading">Data Sources</span>
+          <span className="uc07-view__data-inputs-summary-item uc07-view__data-inputs-summary-item--members">
+            <span className="uc07-view__data-inputs-summary-check" aria-hidden="true">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3.5 8.5 6.5 11.5 12.5 4.5" />
+              </svg>
+            </span>
+            <span className="uc07-view__data-inputs-summary-text">
+              <strong>Members</strong>
+              <span>{allDecisions.length.toLocaleString()} loaded{files.members ? ` · ${files.members.name}` : ""}</span>
+            </span>
+          </span>
+          <span className="uc07-view__data-inputs-summary-item uc07-view__data-inputs-summary-item--ed">
+            <span className="uc07-view__data-inputs-summary-check" aria-hidden="true">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3.5 8.5 6.5 11.5 12.5 4.5" />
+              </svg>
+            </span>
+            <span className="uc07-view__data-inputs-summary-text">
+              <strong>ED Visits</strong>
+              <span>{files.edVisits ? files.edVisits.name : "loaded"}</span>
+            </span>
+          </span>
+          <span className="uc07-view__data-inputs-summary-item uc07-view__data-inputs-summary-item--care">
+            <span className="uc07-view__data-inputs-summary-check" aria-hidden="true">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3.5 8.5 6.5 11.5 12.5 4.5" />
+              </svg>
+            </span>
+            <span className="uc07-view__data-inputs-summary-text">
+              <strong>Care History</strong>
+              <span>{files.care ? files.care.name : "loaded"}</span>
+            </span>
+          </span>
+          {safetyContextCsvFile && (
+            <span className="uc07-view__data-inputs-summary-item uc07-view__data-inputs-summary-item--optional">
+              <span className="uc07-view__data-inputs-summary-check" aria-hidden="true">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3.5 8.5 6.5 11.5 12.5 4.5" />
+                </svg>
+              </span>
+              <span className="uc07-view__data-inputs-summary-text">
+                <strong>Current Safety</strong>
+                <span>{safetyContextCsvFile.name}</span>
+              </span>
+            </span>
+          )}
+          <button type="button" className="uc07-view__change-files" onClick={() => setInputsExpanded(true)}>
+            Change files
+          </button>
+        </section>
+      )}
 
       {loading && <DecisionLoading />}
       {error && !loading && <DecisionError error={error} onDismiss={() => setError(null)} />}
@@ -221,7 +276,7 @@ export function Uc07View() {
         <>
           {isBatch && (
             <>
-              <PopulationSummary decisions={filtered} totalCount={effectiveDecisions.length} filtersActive={filtersActive} />
+              <PopulationSummary decisions={effectiveDecisions} filters={filters} onFilterChange={updateFilters} />
               <MemberFilters
                 filters={filters}
                 onChange={updateFilters}

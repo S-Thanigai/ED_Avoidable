@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { PatientRow, RiskCategory } from "../types";
 import { CarePill, RiskPill } from "./Pills";
-import "./PatientTable.css";
+import "./LegacyPatientTable.css";
 
 type SortKey = "member_id" | "age" | "risk_score";
 type SortDir = "asc" | "desc";

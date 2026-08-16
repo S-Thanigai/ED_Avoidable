@@ -18,6 +18,18 @@ describe("Uc07ResultsTable", () => {
     expect(screen.getByText("Care Management")).toBeInTheDocument();
   });
 
+  it("renders a Safety badge reflecting each decision's own safety state", () => {
+    const decisions = [
+      makeDecision({ member_id: "M1", safety: { state: "CLEAR", context_completeness: "COMPLETE", context_source: "CALLER_SUPPLIED" } }),
+      makeDecision({ member_id: "M2", safety: { state: "OVERRIDE", override: true }, navigation: { destination: null, reason_codes: [], explanation: "x" } }),
+    ];
+    render(
+      <Uc07ResultsTable decisions={decisions} onSelect={() => {}} selectedMemberId={null} sort={DEFAULT_SORT} onSortChange={() => {}} />,
+    );
+    expect(screen.getByText("Clear")).toBeInTheDocument();
+    expect(screen.getByText("Override")).toBeInTheDocument();
+  });
+
   it("shows 'Suppressed by override' for a null destination rather than a fabricated navigation label", () => {
     const decisions = [
       makeDecision({ member_id: "M1", navigation: { destination: null, reason_codes: [], explanation: "x" }, safety: { state: "OVERRIDE", override: true } }),

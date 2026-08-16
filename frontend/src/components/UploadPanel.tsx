@@ -1,4 +1,4 @@
-import { useRef, useState, type DragEvent } from "react";
+import { useRef, useState, type DragEvent, type KeyboardEvent, type ReactNode } from "react";
 import type { UploadFiles } from "../types";
 import "./UploadPanel.css";
 
@@ -6,13 +6,53 @@ interface DropzoneConfig {
   key: keyof UploadFiles;
   label: string;
   hint: string;
+  icon: "members" | "ed" | "care";
 }
 
 const ZONES: DropzoneConfig[] = [
-  { key: "members", label: "Members CSV", hint: "member_id, age, gender, access barriers…" },
-  { key: "edVisits", label: "ED Visits CSV", hint: "visit_date, diagnosis, admitted, red_flag…" },
-  { key: "care", label: "Care History CSV", hint: "visit_date, care_type (PCP/UC/Telehealth)…" },
+  { key: "members", label: "Members CSV", hint: "member_id, age, gender, access barriers…", icon: "members" },
+  { key: "edVisits", label: "ED Visits CSV", hint: "visit_date, diagnosis, admitted, red_flag…", icon: "ed" },
+  { key: "care", label: "Care History CSV", hint: "visit_date, care_type (PCP/UC/Telehealth)…", icon: "care" },
 ];
+
+/** Small, dependency-free inline icon set -- deliberately not pulling in
+ * an icon library for three glyphs. Purely decorative (aria-hidden);
+ * the text label always carries the actual meaning. */
+function ZoneIcon({ kind }: { kind: DropzoneConfig["icon"] }) {
+  const paths: Record<DropzoneConfig["icon"], ReactNode> = {
+    members: (
+      <>
+        <circle cx="12" cy="8" r="3.2" />
+        <path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6" />
+      </>
+    ),
+    ed: (
+      <>
+        <path d="M12 3v6M9 6h6" />
+        <rect x="4" y="9" width="16" height="12" rx="2" />
+      </>
+    ),
+    care: (
+      <>
+        <path d="M20 8.5c0-2.5-2-4.5-4.5-4.5-1.4 0-2.7.7-3.5 1.8C11.2 4.7 9.9 4 8.5 4 6 4 4 6 4 8.5c0 5 8 10.5 8 10.5s8-5.5 8-10.5Z" />
+      </>
+    ),
+  };
+  return (
+    <svg
+      className="dropzone__icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {paths[kind]}
+    </svg>
+  );
+}
 
 interface UploadPanelProps {
   files: UploadFiles;
@@ -34,10 +74,15 @@ function Dropzone({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const accept = (candidate: File | undefined) => {
     if (!candidate) return;
-    if (!candidate.name.toLowerCase().endsWith(".csv")) return;
+    if (!candidate.name.toLowerCase().endsWith(".csv")) {
+      setError("Only .csv files are accepted.");
+      return;
+    }
+    setError(null);
     onFileChange(candidate);
   };
 
@@ -48,10 +93,22 @@ function Dropzone({
     accept(event.dataTransfer.files?.[0]);
   };
 
+  const openPicker = () => {
+    if (!disabled) inputRef.current?.click();
+  };
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openPicker();
+    }
+  };
+
   return (
     <div
-      className={`dropzone${dragOver ? " dropzone--over" : ""}${file ? " dropzone--filled" : ""}`}
-      onClick={() => !disabled && inputRef.current?.click()}
+      className={`dropzone dropzone--${config.icon}${dragOver ? " dropzone--over" : ""}${file ? " dropzone--filled" : ""}${error ? " dropzone--error" : ""}`}
+      onClick={openPicker}
+      onKeyDown={handleKeyDown}
       onDragOver={(e) => {
         e.preventDefault();
         if (!disabled) setDragOver(true);
@@ -59,8 +116,9 @@ function Dropzone({
       onDragLeave={() => setDragOver(false)}
       onDrop={handleDrop}
       role="button"
-      tabIndex={0}
+      tabIndex={disabled ? -1 : 0}
       aria-disabled={disabled}
+      aria-label={file ? `${config.label}: ${file.name} selected. Activate to replace.` : `${config.label}: no file selected. Activate to browse or drop a CSV.`}
     >
       <input
         ref={inputRef}
@@ -70,21 +128,43 @@ function Dropzone({
         disabled={disabled}
         onChange={(e) => accept(e.target.files?.[0])}
       />
-      <span className="dropzone__label">{config.label}</span>
+
+      <div className="dropzone__top">
+        <span className="dropzone__icon-chip" aria-hidden="true">
+          <ZoneIcon kind={config.icon} />
+        </span>
+        <span className="dropzone__label">{config.label}</span>
+        {file && !error && (
+          <span className="dropzone__success" aria-hidden="true" title="File selected">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3.5 8.5 6.5 11.5 12.5 4.5" />
+            </svg>
+          </span>
+        )}
+      </div>
+
       {file ? (
         <span className="dropzone__filename">{file.name}</span>
       ) : (
         <>
-          <span className="dropzone__cta">Drop CSV or click to browse</span>
+          <span className="dropzone__cta">Drag &amp; drop, or click to browse</span>
           <span className="dropzone__hint">{config.hint}</span>
         </>
       )}
+
+      {error && (
+        <span className="dropzone__error-text" role="alert">
+          {error}
+        </span>
+      )}
+
       {file && (
         <button
           type="button"
           className="dropzone__clear"
           onClick={(e) => {
             e.stopPropagation();
+            setError(null);
             onFileChange(null);
           }}
           aria-label={`Remove ${config.label}`}
@@ -100,7 +180,7 @@ export function UploadPanel({ files, onFileChange, onRun, loading }: UploadPanel
   const allSelected = files.members && files.edVisits && files.care;
 
   return (
-    <section className="upload-panel">
+    <section className="upload-panel" aria-label="Historical data inputs">
       <div className="upload-panel__grid">
         {ZONES.map((zone) => (
           <Dropzone
@@ -115,7 +195,7 @@ export function UploadPanel({ files, onFileChange, onRun, loading }: UploadPanel
       <div className="upload-panel__actions">
         <button
           type="button"
-          className="run-button"
+          className={`run-button${allSelected ? " run-button--ready" : ""}`}
           disabled={!allSelected || loading}
           onClick={onRun}
         >
@@ -124,12 +204,11 @@ export function UploadPanel({ files, onFileChange, onRun, loading }: UploadPanel
               <span className="spinner" aria-hidden="true" /> Running analysis…
             </>
           ) : (
-            "Run risk analysis"
+            "Run Risk Analysis"
           )}
         </button>
         <span className="upload-panel__note">
-          Files stay on this request only — nothing is stored server-side beyond the
-          scoring run.
+          Files stay on this request only — nothing is stored server-side beyond the scoring run.
         </span>
       </div>
     </section>

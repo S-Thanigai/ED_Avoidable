@@ -25,6 +25,23 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Literal
 
+from dotenv import load_dotenv
+
+# Load backend/.env (if present) into the process environment BEFORE
+# anything below reads os.environ -- this is what lets GENAI_ENABLED/
+# OLLAMA_BASE_URL/OLLAMA_MODEL/GENAI_TIMEOUT_SECONDS/CORS_ORIGINS be set
+# once in a local file instead of re-exporting them in every shell
+# session. Uses an explicit path (not the CWD-relative default
+# load_dotenv() would use) so `uvicorn main:app` works the same whether
+# it's launched from backend/ or the repo root. override=False (the
+# default) means a variable already set in the real environment always
+# wins over the .env file -- this is deliberate: it keeps `monkeypatch.
+# setenv(...)` in tests, and any real deployment env var, authoritative
+# over a local .env. backend/.env is untracked (see .gitignore) and never
+# committed -- backend/.env.example documents the expected keys with
+# safe, non-secret example values.
+load_dotenv(Path(__file__).resolve().parent / ".env")
+
 import numpy as np
 import pandas as pd
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
