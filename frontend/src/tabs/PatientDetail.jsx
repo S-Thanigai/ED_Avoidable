@@ -14,6 +14,11 @@ export default function PatientDetail({ selectedPatient, patients = [], onSelect
   const [topPositive, setTopPositive] = useState([]);
   const [topNegative, setTopNegative] = useState([]);
 
+  // LLM Explanation state
+  const [aiExplanation, setAiExplanation] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState(null);
+
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (!searchInput.trim()) return;
@@ -31,7 +36,6 @@ export default function PatientDetail({ selectedPatient, patients = [], onSelect
   useEffect(() => {
     if (!selectedPatient) return;
 
-    // Check if SHAP data is already parsed and stored in the object
     const hasPositive = Array.isArray(selectedPatient.top_positive_factors) && selectedPatient.top_positive_factors.length > 0;
     const hasNegative = Array.isArray(selectedPatient.top_negative_factors) && selectedPatient.top_negative_factors.length > 0;
 
@@ -43,7 +47,6 @@ export default function PatientDetail({ selectedPatient, patients = [], onSelect
       return;
     }
 
-    // Try to fetch on-demand SHAP calculations
     let active = true;
     setShapLoading(true);
     setShapError(null);
@@ -90,7 +93,6 @@ export default function PatientDetail({ selectedPatient, patients = [], onSelect
         const pos = safeParse(json.top_positive_factors);
         const neg = safeParse(json.top_negative_factors);
 
-        // Store back in the patient object locally so it caches and doesn't refetch
         selectedPatient.top_positive_factors = pos;
         selectedPatient.top_negative_factors = neg;
 
@@ -114,6 +116,105 @@ export default function PatientDetail({ selectedPatient, patients = [], onSelect
       active = false;
     };
   }, [selectedPatient, uploadedFiles]);
+
+  // On-demand AI/LLM Clinical Explanation loading
+  useEffect(() => {
+    if (!selectedPatient) return;
+
+    let active = true;
+    setAiExplanation(null);
+    setAiLoading(true);
+    setAiError(null);
+
+    const fetchAiExplanation = async () => {
+      try {
+        const API_BASE_URL = window.location.origin.includes('517') 
+          ? 'http://127.0.0.1:8001' 
+          : window.location.origin;
+
+        // Map risk category to uppercase tier expected by schema
+        let tier = 'LOW';
+        if (selectedPatient.risk_category === 'High') tier = 'HIGH';
+        else if (selectedPatient.risk_category === 'Medium') tier = 'MODERATE';
+
+        // Map navigation destination to uppercase enum
+        let dest = 'NO_PROACTIVE_NAVIGATION';
+        const rawDest = selectedPatient.recommended_alternative_care;
+        if (rawDest === 'Telehealth') dest = 'TELEHEALTH';
+        else if (rawDest === 'PCP') dest = 'PRIMARY_CARE';
+        else if (rawDest === 'Urgent Care') dest = 'URGENT_CARE';
+        else if (rawDest === 'Care Management') dest = 'CARE_MANAGEMENT';
+
+        // Format factors
+        const formatFactorsList = (factors, dir) => {
+          if (!factors) return [];
+          const list = typeof factors === 'string' ? JSON.parse(factors) : factors;
+          return (Array.isArray(list) ? list : []).map(f => ({
+            display_name: f.feature || 'unknown',
+            direction: dir
+          }));
+        };
+
+        const factorsList = [
+          ...formatFactorsList(selectedPatient.top_positive_factors, 'INCREASES_RISK'),
+          ...formatFactorsList(selectedPatient.top_negative_factors, 'DECREASES_RISK')
+        ];
+
+        const payload = {
+          risk: {
+            probability: selectedPatient.risk_probability || 0,
+            tier: tier,
+            model_version: 'uc07-risk-synthetic-v1',
+            factors: factorsList.slice(0, 5)
+          },
+          navigation: {
+            destination: dest,
+            reason_codes: selectedPatient.alternative_care_reason ? [selectedPatient.alternative_care_reason] : []
+          },
+          safety: {
+            state: selectedPatient.safety_guardrail_flag ? 'OVERRIDE' : 'CLEAR',
+            context_completeness: 'COMPLETE',
+            context_source: 'SYSTEM_DERIVED'
+          },
+          synthetic_model: true
+        };
+
+        const response = await fetch(`${API_BASE_URL}/uc07/explain`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          throw new Error(`AI case explanation failed (HTTP ${response.status}).`);
+        }
+
+        const data = await response.json();
+        if (active) {
+          setAiExplanation(data);
+        }
+      } catch (err) {
+        console.error('AI Explanation Fetch Error:', err);
+        if (active) {
+          setAiError('AI Clinical Reasoning case details could not be loaded.');
+        }
+      } finally {
+        if (active) {
+          setAiLoading(false);
+        }
+      }
+    };
+
+    // Delay slightly to allow SHAP factors to resolve first
+    const timer = setTimeout(() => {
+      fetchAiExplanation();
+    }, 100);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [selectedPatient, topPositive, topNegative]);
 
   // If no patient is selected, show search input empty state
   if (!selectedPatient) {
@@ -226,6 +327,63 @@ export default function PatientDetail({ selectedPatient, patients = [], onSelect
             topNegative={topNegative}
           />
         )}
+      </div>
+
+      {/* AI CLINICAL CASE EXPLANATION */}
+      <div className="glass-panel p-6 rounded-2xl space-y-4 relative overflow-hidden border-cyan-500/20 bg-cyan-950/5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-cyan-400 animate-pulse" />
+            <h3 className="text-sm font-semibold text-slate-200 uppercase tracking-wider">
+              AI Clinical Case Explanation
+            </h3>
+          </div>
+          {aiExplanation && (
+            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+              aiExplanation.explanation_source === 'GENAI'
+                ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
+                : 'bg-slate-800 text-slate-400 border border-slate-700'
+            }`}>
+              {aiExplanation.explanation_source === 'GENAI' ? 'LLM Generated (Qwen3)' : 'System Deterministic Fallback'}
+            </span>
+          )}
+        </div>
+
+        {aiLoading ? (
+          <div className="flex flex-col items-center justify-center py-8 space-y-2">
+            <Loader2 className="w-6 h-6 text-cyan-400 animate-spin" />
+            <span className="text-xs text-slate-400 font-semibold">Generating clinical summary & policy review...</span>
+          </div>
+        ) : aiError ? (
+          <div className="text-xs text-rose-300 py-2">
+            {aiError}
+          </div>
+        ) : aiExplanation ? (
+          <div className="space-y-4">
+            <p className="text-sm text-slate-300 italic leading-relaxed bg-slate-900/60 p-3.5 rounded-xl border border-slate-800/80">
+              "{aiExplanation.summary}"
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+              <div className="space-y-1">
+                <span className="font-bold text-slate-400 block uppercase tracking-wider text-[10px]">Risk Factor Drivers</span>
+                <p className="text-slate-300 leading-relaxed">{aiExplanation.risk_explanation}</p>
+              </div>
+              <div className="space-y-1 border-t md:border-t-0 md:border-l border-slate-800 pt-3 md:pt-0 md:pl-4">
+                <span className="font-bold text-slate-400 block uppercase tracking-wider text-[10px]">Outpatient Navigation</span>
+                <p className="text-slate-300 leading-relaxed">{aiExplanation.navigation_explanation}</p>
+              </div>
+              <div className="space-y-1 border-t md:border-t-0 md:border-l border-slate-800 pt-3 md:pt-0 md:pl-4">
+                <span className="font-bold text-slate-400 block uppercase tracking-wider text-[10px]">Safety & Guardrails</span>
+                <p className="text-slate-300 leading-relaxed">{aiExplanation.safety_explanation}</p>
+              </div>
+            </div>
+            {aiExplanation.disclaimer && (
+              <div className="pt-2 text-[10px] text-slate-500 italic leading-relaxed border-t border-slate-900">
+                Disclaimer: {aiExplanation.disclaimer}
+              </div>
+            )}
+          </div>
+        ) : null}
       </div>
 
       {/* CARE NAVIGATION RECOMMENDATIONS (If present) */}

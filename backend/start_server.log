@@ -1,15 +1,41 @@
-INFO:     Started server process [31131]
+INFO:     Started server process [34490]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://127.0.0.1:8001 (Press CTRL+C to quit)
-INFO:     127.0.0.1:59913 - "GET /health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59966 - "POST /predict-demo HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59968 - "POST /explain-member HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59969 - "POST /explain-member HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59986 - "POST /explain-member HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59987 - "POST /explain-member HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60015 - "POST /predict-json HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60017 - "POST /explain-member HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60016 - "POST /explain-member HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60016 - "POST /explain-member HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60017 - "POST /explain-member HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61405 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61414 - "POST /predict-demo HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61418 - "POST /explain-member HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61419 - "POST /explain-member HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61484 - "POST /predict-demo HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61484 - "POST /explain-member HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61485 - "POST /explain-member HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61494 - "OPTIONS /uc07/explain HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61494 - "POST /uc07/explain HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61501 - "POST /uc07/explain HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61495 - "POST /predict-demo HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61535 - "POST /explain-member HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61536 - "POST /explain-member HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61537 - "POST /uc07/explain HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61537 - "POST /uc07/explain HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61542 - "POST /explain-member HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61543 - "POST /explain-member HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61544 - "POST /uc07/explain HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61544 - "POST /uc07/explain HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61660 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61685 - "POST /predict-demo HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61686 - "POST /explain-member HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61687 - "POST /explain-member HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61688 - "OPTIONS /uc07/explain HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61687 - "POST /uc07/explain HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61687 - "POST /uc07/explain HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61704 - "POST /uc07/explain HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61707 - "POST /uc07/explain HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61709 - "POST /explain-member HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61710 - "POST /explain-member HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61711 - "POST /uc07/explain HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61711 - "POST /uc07/explain HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61711 - "POST /uc07/explain HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61712 - "POST /explain-member HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61713 - "POST /explain-member HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61714 - "POST /uc07/explain HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61714 - "POST /uc07/explain HTTP/1.1" 200 OK
