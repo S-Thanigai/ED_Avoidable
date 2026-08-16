@@ -1,0 +1,13 @@
+case,status_code,expected_status,passed,no_traceback_leaked
+valid complete request,200,200,True,True
+"valid, no current safety context",200,200,True,True
+"valid, partial safety context",200,200,True,True
+"valid, override context",200,200,True,True
+invalid age,422,422,True,True
+negative distance,422,422,True,True
+invalid binary flags,422,422,True,True
+invalid triage (safety context),422,422,True,True
+inconsistent chronic count,422,422,True,True
+unknown member,404,404,True,True
+missing required field,422,422,True,True
+extra fields (tolerated at CSV-column level),200,200,True,True

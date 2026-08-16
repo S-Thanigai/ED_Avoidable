@@ -1,0 +1,58 @@
+import { describe, expect, it } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { WhyFlaggedSection } from "../components/WhyFlaggedSection";
+import { makeDecision } from "./fixtures";
+
+describe("WhyFlaggedSection", () => {
+  it("renders each explanation factor's display name", () => {
+    const decision = makeDecision({
+      risk: {
+        explanation_factors: [
+          { feature: "recent_ed_count", display_name: "Recent overall ED utilization", direction: "INCREASES_RISK", contribution: 0.2, explanation_method: "SHAP_LINEAR" },
+          { feature: "telehealth_available", display_name: "Telehealth availability", direction: "DECREASES_RISK", contribution: -0.1, explanation_method: "SHAP_LINEAR" },
+        ],
+      },
+    });
+    render(<WhyFlaggedSection risk={decision.risk} />);
+    expect(screen.getByText("Recent overall ED utilization")).toBeInTheDocument();
+    expect(screen.getByText("Telehealth availability")).toBeInTheDocument();
+  });
+
+  it("shows an understandable direction indicator, not just a raw sign", () => {
+    const decision = makeDecision({
+      risk: {
+        explanation_factors: [
+          { feature: "a", display_name: "Factor A", direction: "INCREASES_RISK", contribution: 0.2, explanation_method: "SHAP_LINEAR" },
+          { feature: "b", display_name: "Factor B", direction: "DECREASES_RISK", contribution: -0.1, explanation_method: "SHAP_LINEAR" },
+        ],
+      },
+    });
+    render(<WhyFlaggedSection risk={decision.risk} />);
+    expect(screen.getByText("increased the model's estimate")).toBeInTheDocument();
+    expect(screen.getByText("decreased the model's estimate")).toBeInTheDocument();
+  });
+
+  it("shows the explanation method, correctly reflecting SHAP vs linear contribution", () => {
+    const shapDecision = makeDecision({ risk: { explanation_method: "SHAP_LINEAR" } });
+    const { rerender } = render(<WhyFlaggedSection risk={shapDecision.risk} />);
+    expect(screen.getByText(/Explanation method: SHAP/)).toBeInTheDocument();
+
+    const linearDecision = makeDecision({ risk: { explanation_method: "LINEAR_CONTRIBUTION" } });
+    rerender(<WhyFlaggedSection risk={linearDecision.risk} />);
+    expect(screen.getByText(/Explanation method: Logistic regression/)).toBeInTheDocument();
+  });
+
+  it("never uses causal language", () => {
+    const decision = makeDecision({});
+    render(<WhyFlaggedSection risk={decision.risk} />);
+    const text = document.body.textContent ?? "";
+    expect(text.toLowerCase()).not.toMatch(/\bcause[sd]?\b/);
+    expect(text.toLowerCase()).not.toContain("diagnos");
+  });
+
+  it("renders nothing when there are no explanation factors", () => {
+    const decision = makeDecision({ risk: { explanation_factors: [] } });
+    const { container } = render(<WhyFlaggedSection risk={decision.risk} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+});

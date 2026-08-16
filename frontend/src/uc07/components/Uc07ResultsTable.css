@@ -1,0 +1,117 @@
+.uc07-results-table__wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-sm);
+}
+
+.uc07-results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.uc07-results-table th,
+.uc07-results-table td {
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--gridline);
+  white-space: nowrap;
+}
+
+.uc07-results-table th {
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-weight: 700;
+  padding: 0;
+}
+
+.uc07-results-table__sort-button {
+  width: 100%;
+  height: 100%;
+  padding: 10px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+.uc07-results-table__sort-button:hover {
+  color: var(--text-primary);
+}
+
+.uc07-results-table__sort-icon {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.uc07-results-table__sort-icon--active {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.uc07-results-table tbody tr:hover {
+  background: var(--surface-card-hover);
+}
+
+.uc07-results-table__row--selected {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.uc07-results-table__row--selected:hover {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+.uc07-results-table__member-link {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.88rem;
+}
+.uc07-results-table__member-link:hover {
+  text-decoration: underline;
+}
+
+.uc07-results-table__details-button {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.uc07-results-table__details-button:hover {
+  background: var(--surface-sunken);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.uc07-results-table__tier {
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.uc07-results-table__tier--low {
+  color: var(--status-good);
+  background: var(--status-good-bg);
+}
+.uc07-results-table__tier--moderate {
+  color: var(--status-warning);
+  background: var(--status-warning-bg);
+}
+.uc07-results-table__tier--high {
+  color: var(--status-critical);
+  background: var(--status-critical-bg);
+}

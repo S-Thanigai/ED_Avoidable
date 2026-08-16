@@ -1,0 +1,42 @@
+.safety-context-form {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  margin: 0;
+}
+
+.safety-context-form__legend {
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 0 4px;
+  color: var(--text-primary);
+}
+
+.safety-context-form__help {
+  margin: 4px 0 12px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.safety-context-form__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px 16px;
+}
+
+.safety-context-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+}
+
+.safety-context-form__field select {
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-card);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+}

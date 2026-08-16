@@ -1,0 +1,79 @@
+{
+  "test_rank_metrics": {
+    "roc_auc": 0.704752,
+    "pr_auc": 0.336636,
+    "brier_score": 0.102334,
+    "prevalence": 0.1307,
+    "pr_auc_no_skill_baseline": 0.1307,
+    "log_loss": 0.349908
+  },
+  "test_pr_enrichment": 2.5756,
+  "test_moderate_confusion": {
+    "threshold": 0.105986,
+    "n_selected": 3473,
+    "pct_selected": 0.3473,
+    "true_positives": 800,
+    "false_positives": 2673,
+    "false_negatives": 507,
+    "true_negatives": 6020,
+    "precision": 0.230348,
+    "recall": 0.612089,
+    "specificity": 0.692511,
+    "f1": 0.334728
+  },
+  "test_high_confusion": {
+    "threshold": 0.213252,
+    "n_selected": 1008,
+    "pct_selected": 0.1008,
+    "true_positives": 378,
+    "false_positives": 630,
+    "false_negatives": 929,
+    "true_negatives": 8063,
+    "precision": 0.375,
+    "recall": 0.289212,
+    "specificity": 0.927528,
+    "f1": 0.326566
+  },
+  "test_tier_report": [
+    {
+      "tier": "LOW",
+      "member_count": 6527,
+      "population_pct": 0.6527,
+      "positive_count": 507,
+      "observed_prevalence": 0.077677,
+      "lift_vs_overall_prevalence": 0.5943,
+      "mean_predicted_probability": 0.072059
+    },
+    {
+      "tier": "MODERATE",
+      "member_count": 2465,
+      "population_pct": 0.2465,
+      "positive_count": 422,
+      "observed_prevalence": 0.171197,
+      "lift_vs_overall_prevalence": 1.3098,
+      "mean_predicted_probability": 0.143247
+    },
+    {
+      "tier": "HIGH",
+      "member_count": 1008,
+      "population_pct": 0.1008,
+      "positive_count": 378,
+      "observed_prevalence": 0.375,
+      "lift_vs_overall_prevalence": 2.8692,
+      "mean_predicted_probability": 0.369215
+    }
+  ],
+  "validation_vs_test": {
+    "pr_auc_validation": 0.32877,
+    "pr_auc_test": 0.336636,
+    "pr_auc_delta": 0.007866,
+    "roc_auc_validation": 0.699301,
+    "roc_auc_test": 0.704752,
+    "roc_auc_delta": 0.005451,
+    "brier_validation": 0.09267,
+    "brier_test": 0.102334,
+    "brier_delta": 0.009664,
+    "material_degradation_flag": false,
+    "degradation_rule": "flag if pr_auc_delta < -0.03 or brier_delta > 0.01 (test worse than validation)"
+  }
+}

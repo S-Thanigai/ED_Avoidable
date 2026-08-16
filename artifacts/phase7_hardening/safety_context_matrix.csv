@@ -1,0 +1,8 @@
+case,fields_supplied,completeness,source,safety_state,expected_state,expected_completeness,passed
+ABSENT (nothing supplied),{},ABSENT,NOT_AVAILABLE,CAUTION,CAUTION,ABSENT,True
+"PARTIAL (1 field, safe)","{""triage_level"": 4}",PARTIAL,CALLER_SUPPLIED,CAUTION,CAUTION,PARTIAL,True
+"PARTIAL (4 of 5, safe)","{""red_flag"": 0, ""icu"": 0, ""admitted"": 0, ""major_procedure"": 0}",PARTIAL,CALLER_SUPPLIED,CAUTION,CAUTION,PARTIAL,True
+COMPLETE (all safe),"{""red_flag"": 0, ""icu"": 0, ""admitted"": 0, ""major_procedure"": 0, ""triage_level"": 4}",COMPLETE,CALLER_SUPPLIED,CLEAR,CLEAR,COMPLETE,True
+PARTIAL + known OVERRIDE trigger,"{""red_flag"": 1}",PARTIAL,CALLER_SUPPLIED,OVERRIDE,OVERRIDE,PARTIAL,True
+COMPLETE + known OVERRIDE trigger,"{""red_flag"": 0, ""icu"": 1, ""admitted"": 0, ""major_procedure"": 0, ""triage_level"": 4}",COMPLETE,CALLER_SUPPLIED,OVERRIDE,OVERRIDE,COMPLETE,True
+ABSENT but conceptually urgent (no data at all),{},ABSENT,NOT_AVAILABLE,CAUTION,CAUTION,ABSENT,True

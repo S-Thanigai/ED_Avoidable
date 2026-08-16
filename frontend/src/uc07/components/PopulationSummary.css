@@ -1,0 +1,84 @@
+.population-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.population-summary__caveat {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.population-summary__caveat strong {
+  color: var(--text-secondary);
+}
+
+.population-summary__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.population-summary__card {
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.population-summary__card-title {
+  display: block;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.population-summary__card-rows {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.population-summary__card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.86rem;
+}
+
+.population-summary__card-row dt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.population-summary__card-row dd {
+  margin: 0;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.population-summary__dot-mark {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.population-summary__dot--good .population-summary__dot-mark {
+  background: var(--status-good);
+}
+.population-summary__dot--warning .population-summary__dot-mark {
+  background: var(--status-warning);
+}
+.population-summary__dot--critical .population-summary__dot-mark {
+  background: var(--status-critical);
+}

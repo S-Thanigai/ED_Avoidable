@@ -1,0 +1,69 @@
+scenario_group,trigger,risk_tier,preliminary_destination,safety_state,override,final_destination,expected,passed
+individual_trigger_x_destination,red_flag=1,HIGH,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_destination,red_flag=1,LOW,TELEHEALTH,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_destination,red_flag=1,LOW,URGENT_CARE,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_destination,red_flag=1,LOW,PRIMARY_CARE,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_destination,red_flag=1,LOW,NO_PROACTIVE_NAVIGATION,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_destination,icu=1,HIGH,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_destination,icu=1,LOW,TELEHEALTH,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_destination,icu=1,LOW,URGENT_CARE,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_destination,icu=1,LOW,PRIMARY_CARE,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_destination,icu=1,LOW,NO_PROACTIVE_NAVIGATION,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_destination,admitted=1,HIGH,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_destination,admitted=1,LOW,TELEHEALTH,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_destination,admitted=1,LOW,URGENT_CARE,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_destination,admitted=1,LOW,PRIMARY_CARE,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_destination,admitted=1,LOW,NO_PROACTIVE_NAVIGATION,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_destination,major_procedure=1,HIGH,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_destination,major_procedure=1,LOW,TELEHEALTH,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_destination,major_procedure=1,LOW,URGENT_CARE,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_destination,major_procedure=1,LOW,PRIMARY_CARE,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_destination,major_procedure=1,LOW,NO_PROACTIVE_NAVIGATION,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_destination,triage_level=1,HIGH,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_destination,triage_level=1,LOW,TELEHEALTH,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_destination,triage_level=1,LOW,URGENT_CARE,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_destination,triage_level=1,LOW,PRIMARY_CARE,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_destination,triage_level=1,LOW,NO_PROACTIVE_NAVIGATION,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_destination,triage_level=2,HIGH,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_destination,triage_level=2,LOW,TELEHEALTH,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_destination,triage_level=2,LOW,URGENT_CARE,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_destination,triage_level=2,LOW,PRIMARY_CARE,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_destination,triage_level=2,LOW,NO_PROACTIVE_NAVIGATION,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_risk_tier,red_flag=1,LOW,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_risk_tier,red_flag=1,MODERATE,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_risk_tier,red_flag=1,HIGH,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_risk_tier,icu=1,LOW,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_risk_tier,icu=1,MODERATE,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_risk_tier,icu=1,HIGH,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_risk_tier,admitted=1,LOW,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_risk_tier,admitted=1,MODERATE,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_risk_tier,admitted=1,HIGH,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_risk_tier,major_procedure=1,LOW,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_risk_tier,major_procedure=1,MODERATE,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_risk_tier,major_procedure=1,HIGH,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_risk_tier,triage_level=1,LOW,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_risk_tier,triage_level=1,MODERATE,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_risk_tier,triage_level=1,HIGH,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_risk_tier,triage_level=2,LOW,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_risk_tier,triage_level=2,MODERATE,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+individual_trigger_x_risk_tier,triage_level=2,HIGH,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+named_combination,red_flag + HIGH risk,HIGH,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+named_combination,ICU + telehealth available,LOW,TELEHEALTH,OVERRIDE,True,,OVERRIDE,True
+named_combination,admitted + strong PCP access,LOW,PRIMARY_CARE,OVERRIDE,True,,OVERRIDE,True
+named_combination,major procedure + LOW risk,LOW,NO_PROACTIVE_NAVIGATION,OVERRIDE,True,,OVERRIDE,True
+named_combination,triage 1 + care-management eligibility,HIGH,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+multi_trigger_combination,red_flag=1 + icu=1,HIGH,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+multi_trigger_combination,red_flag=1 + admitted=1,HIGH,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+multi_trigger_combination,red_flag=1 + major_procedure=1,HIGH,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+multi_trigger_combination,red_flag=1 + triage_level=1,HIGH,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+multi_trigger_combination,red_flag=1 + triage_level=2,HIGH,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+multi_trigger_combination,icu=1 + admitted=1,HIGH,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+multi_trigger_combination,icu=1 + major_procedure=1,HIGH,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+multi_trigger_combination,icu=1 + triage_level=1,HIGH,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+multi_trigger_combination,icu=1 + triage_level=2,HIGH,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+multi_trigger_combination,admitted=1 + major_procedure=1,HIGH,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+multi_trigger_combination,admitted=1 + triage_level=1,HIGH,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+multi_trigger_combination,admitted=1 + triage_level=2,HIGH,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+multi_trigger_combination,major_procedure=1 + triage_level=1,HIGH,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+multi_trigger_combination,major_procedure=1 + triage_level=2,HIGH,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True
+multi_trigger_combination,triage_level=1 + triage_level=2,HIGH,CARE_MANAGEMENT,OVERRIDE,True,,OVERRIDE,True

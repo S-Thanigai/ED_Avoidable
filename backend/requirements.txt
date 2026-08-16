@@ -4,6 +4,8 @@ python-multipart
 pandas
 numpy
 scikit-learn==1.7.2
-joblib
+joblib==1.5.3
 openpyxl
 shap
+xgboost==3.2.0
+httpx

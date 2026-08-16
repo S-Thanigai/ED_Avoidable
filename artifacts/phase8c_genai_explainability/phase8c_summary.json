@@ -1,0 +1,60 @@
+{
+  "phase": "8C",
+  "objective": "Authoritative model explainability (SHAP) + controlled GenAI Explanation Agent (Ollama qwen3:8b), zero decision authority",
+  "backend_files_created": [
+    "backend/agents/model_explainability.py",
+    "backend/agents/genai_explanation.py",
+    "backend/tests/test_model_explainability.py",
+    "backend/tests/test_genai_explanation.py",
+    "backend/tests/test_genai_explanation_authority.py",
+    "backend/tests/test_genai_privacy.py",
+    "backend/tests/test_phase8c_frontend_architecture.py"
+  ],
+  "backend_files_modified": [
+    "backend/agents/contracts.py",
+    "backend/agents/risk_detection.py",
+    "backend/agents/orchestrator.py",
+    "backend/main.py",
+    "backend/requirements.txt"
+  ],
+  "frontend_files_created": [
+    "frontend/src/uc07/components/WhyFlaggedSection.tsx",
+    "frontend/src/uc07/components/WhyFlaggedSection.css",
+    "frontend/src/uc07/components/AiExplanationSection.tsx",
+    "frontend/src/uc07/components/AiExplanationSection.css",
+    "frontend/src/uc07/__tests__/WhyFlaggedSection.test.tsx",
+    "frontend/src/uc07/__tests__/AiExplanationSection.test.tsx"
+  ],
+  "frontend_files_modified": [
+    "frontend/src/uc07/types.ts",
+    "frontend/src/uc07/api.ts",
+    "frontend/src/uc07/components/Uc07DecisionPanel.tsx",
+    "frontend/src/uc07/components/MemberDetailsDrawer.tsx",
+    "frontend/src/uc07/__tests__/fixtures.ts"
+  ],
+  "new_endpoint": "POST /uc07/explain (lazy, single-member, allow-listed input, never touches UC07Orchestrator/RiskDetectionAgent)",
+  "modified_endpoint_none": true,
+  "explanation_method_primary": "SHAP_LINEAR",
+  "explanation_method_fallback": "LINEAR_CONTRIBUTION",
+  "genai_model": "qwen3:8b",
+  "genai_enabled_by_default": false,
+  "backend_tests": {"baseline": 530, "new": 61, "total_collected": 591, "passed_full_run": 590, "known_exception": "test_24_25_26_model_and_dataset_hashes_unchanged (pre-existing, content-verified benign, see DECISION_LOG #118)"},
+  "frontend_tests": {"baseline": 63, "new": 12, "total": 75, "failed": 0},
+  "live_verification_scenarios": [
+    "LOW/no-context(CAUTION)", "MODERATE/no-context(CAUTION)", "HIGH/no-context(CAUTION)",
+    "LOW/complete-context(CLEAR)", "MODERATE/partial-context(CAUTION)", "HIGH/red_flag=1(OVERRIDE)"
+  ],
+  "live_verification_all_genai_source": true,
+  "ollama_unreachable_fallback_verified": true,
+  "decide_endpoint_unaffected_by_genai_failure": true,
+  "risk_probability_changed_by_explainability": false,
+  "risk_tier_changed_by_explainability": false,
+  "navigation_changed_by_genai": false,
+  "safety_state_changed_by_genai": false,
+  "model_changed": false,
+  "thresholds_changed": false,
+  "navigation_rules_changed": false,
+  "safety_agent_logic_changed": false,
+  "model_and_dataset_hashes_unchanged": true,
+  "model_content_bit_identical_verified": true
+}

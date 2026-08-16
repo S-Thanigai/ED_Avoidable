@@ -1,0 +1,80 @@
+.safety-card {
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 2px solid var(--border);
+  background: var(--surface-card);
+}
+
+.safety-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.safety-card__eyebrow {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.safety-card__state {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.safety-card__state-icon {
+  font-size: 1.1rem;
+}
+
+.safety-card__message {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+/* CLEAR: calm, affirmative -- but never louder/larger than CAUTION/OVERRIDE */
+.safety-card--clear {
+  border-color: var(--status-good);
+  background: var(--status-good-bg);
+}
+.safety-card--clear .safety-card__state {
+  color: var(--status-good);
+}
+
+/* CAUTION: must never read as "safe" -- warning color, not green,
+   never de-emphasized relative to CLEAR */
+.safety-card--caution {
+  border-color: var(--status-warning);
+  background: var(--status-warning-bg);
+}
+.safety-card--caution .safety-card__state {
+  color: var(--status-warning);
+}
+
+/* OVERRIDE: strongest visual priority on the page -- larger text,
+   thicker border, critical color, deliberately more prominent than
+   every other state or the navigation card beneath it */
+.safety-card--override {
+  border-color: var(--status-critical);
+  border-width: 3px;
+  background: var(--status-critical-bg);
+  box-shadow: var(--shadow-md);
+}
+.safety-card--override .safety-card__state {
+  color: var(--status-critical);
+  font-size: 1.25rem;
+}
+.safety-card--override .safety-card__message {
+  font-weight: 600;
+  font-size: 0.98rem;
+}

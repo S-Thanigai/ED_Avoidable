@@ -1,0 +1,9 @@
+{
+  "synthetic_flag_true": true,
+  "disclaimer_present": true,
+  "disclaimer_text": "This model was trained and evaluated on synthetic data and must not be interpreted as clinically validated.",
+  "intended_use": "demonstration / UC07 navigation prototype",
+  "mentions_synthetic": true,
+  "mentions_not_clinically_validated": true,
+  "passed": true
+}

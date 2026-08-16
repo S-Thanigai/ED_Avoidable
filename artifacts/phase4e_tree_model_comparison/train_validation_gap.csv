@@ -1,0 +1,5 @@
+model,train_accuracy_0.50,validation_accuracy_0.50,accuracy_gap,train_roc_auc,validation_roc_auc,roc_auc_gap,train_pr_auc,validation_pr_auc,pr_auc_gap,overfitting_flag
+logistic_regression,0.8877,0.8895,-0.0018,0.705308,0.699301,0.006007,0.344785,0.32877,0.016015,False
+random_forest,0.7981,0.7889,0.0092,0.747904,0.689716,0.058188,0.386259,0.317605,0.068654,False
+xgboost,0.8937,0.8886,0.0051,0.760831,0.689284,0.071547,0.41514,0.319847,0.095293,False
+hist_gradient_boosting,0.7715,0.7574,0.0141,0.745305,0.691499,0.053806,0.390063,0.320253,0.06981,False

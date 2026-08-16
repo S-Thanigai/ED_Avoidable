@@ -1,0 +1,108 @@
+{
+  "winner": "logistic_regression",
+  "test_rank_metrics": {
+    "roc_auc": 0.704752,
+    "pr_auc": 0.336636,
+    "brier_score": 0.102334,
+    "prevalence": 0.1307,
+    "pr_auc_no_skill_baseline": 0.1307,
+    "log_loss": 0.349908
+  },
+  "test_pr_enrichment": 2.5756,
+  "test_metrics_by_threshold": {
+    "0.50": {
+      "roc_auc": 0.704752,
+      "pr_auc": 0.336636,
+      "brier_score": 0.102334,
+      "prevalence": 0.1307,
+      "pr_auc_no_skill_baseline": 0.1307,
+      "log_loss": 0.349908,
+      "threshold": 0.5,
+      "n_selected": 185,
+      "pct_selected": 0.0185,
+      "true_positives": 126,
+      "false_positives": 59,
+      "false_negatives": 1181,
+      "true_negatives": 8634,
+      "precision": 0.681081,
+      "recall": 0.096404,
+      "specificity": 0.993213,
+      "f1": 0.168901,
+      "accuracy": 0.876,
+      "balanced_accuracy": 0.544808
+    },
+    "MODERATE": {
+      "roc_auc": 0.704752,
+      "pr_auc": 0.336636,
+      "brier_score": 0.102334,
+      "prevalence": 0.1307,
+      "pr_auc_no_skill_baseline": 0.1307,
+      "log_loss": 0.349908,
+      "threshold": 0.105986,
+      "n_selected": 3473,
+      "pct_selected": 0.3473,
+      "true_positives": 800,
+      "false_positives": 2673,
+      "false_negatives": 507,
+      "true_negatives": 6020,
+      "precision": 0.230348,
+      "recall": 0.612089,
+      "specificity": 0.692511,
+      "f1": 0.334728,
+      "accuracy": 0.682,
+      "balanced_accuracy": 0.6523
+    },
+    "HIGH": {
+      "roc_auc": 0.704752,
+      "pr_auc": 0.336636,
+      "brier_score": 0.102334,
+      "prevalence": 0.1307,
+      "pr_auc_no_skill_baseline": 0.1307,
+      "log_loss": 0.349908,
+      "threshold": 0.213252,
+      "n_selected": 1008,
+      "pct_selected": 0.1008,
+      "true_positives": 378,
+      "false_positives": 630,
+      "false_negatives": 929,
+      "true_negatives": 8063,
+      "precision": 0.375,
+      "recall": 0.289212,
+      "specificity": 0.927528,
+      "f1": 0.326566,
+      "accuracy": 0.8441,
+      "balanced_accuracy": 0.60837
+    }
+  },
+  "test_risk_tiers": [
+    {
+      "tier": "LOW",
+      "member_count": 6527,
+      "population_pct": 0.6527,
+      "positive_count": 507,
+      "observed_prevalence": 0.077677,
+      "lift_vs_overall_prevalence": 0.5943,
+      "mean_predicted_probability": 0.072059
+    },
+    {
+      "tier": "MODERATE",
+      "member_count": 2465,
+      "population_pct": 0.2465,
+      "positive_count": 422,
+      "observed_prevalence": 0.171197,
+      "lift_vs_overall_prevalence": 1.3098,
+      "mean_predicted_probability": 0.143247
+    },
+    {
+      "tier": "HIGH",
+      "member_count": 1008,
+      "population_pct": 0.1008,
+      "positive_count": 378,
+      "observed_prevalence": 0.375,
+      "lift_vs_overall_prevalence": 2.8692,
+      "mean_predicted_probability": 0.369215
+    }
+  ],
+  "moderate_threshold": 0.105986,
+  "high_threshold": 0.213252
+}

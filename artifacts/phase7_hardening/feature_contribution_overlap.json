@@ -1,0 +1,9 @@
+{
+  "telehealth_available": 0.1248,
+  "pcp_distance_miles": 0.3001,
+  "urgent_care_distance_miles": 0.296,
+  "prior_potentially_avoidable_ed_count_270d": 0.353,
+  "prior_potentially_avoidable_ed_count_180d": -0.3125,
+  "clinical_burden": 0.0781,
+  "access_burden": 0.6976
+}
