@@ -744,3 +744,37 @@ Full rationale in `docs/08B_CURRENT_SAFETY_CONTEXT_WORKFLOW.md`.
      re-ran each model's isolated reproducibility test once so its final
      recorded byte hash matches the Part 1 baseline exactly for all 11
      tracked files, datasets included.
+119. **GenAI free-text consistency checks alone are not a sufficient
+     safety guarantee -- a structured, exact-match ENUM echo is the
+     primary one (Phase 8D).** The Phase 8C health check demonstrated a
+     real bypass: `_safety_state_consistency_violation`'s old
+     deny-list-only design (reject text naming a DIFFERENT state's exact
+     phrase) missed a vague-but-wrong reassurance ("everything looks
+     fine") for an actual OVERRIDE, because that phrasing named no OTHER
+     state's phrase at all. Fix: the Ollama response schema now REQUIRES
+     `risk_tier`/`navigation_destination`/`safety_state` fields copied
+     verbatim from the input, exact-match checked against the
+     authoritative decision BEFORE any free text is examined. Free-text
+     checks (including three new layers: a universal reassurance-phrase
+     ban, and a required-positive-phrase check for OVERRIDE/CAUTION) now
+     run as a SECOND, independent layer on top of the structured echo,
+     not instead of it -- either layer failing alone rejects the output.
+     See `docs/08D_CRITICAL_FIXES.md` §1-3.
+120. **`starlette.concurrency.run_in_threadpool` was tried FIRST for the
+     legacy `/predict` freeze and PROVEN INSUFFICIENT by a controlled
+     test before committing to a process-pool fix.** Threading shares one
+     GIL; `predict.py`'s per-row legacy SHAP `TreeExplainer` loop holds
+     it near-continuously, so wrapping `predict()` in a thread pool still
+     starved a concurrent asyncio task for the FULL ~22s duration of a
+     300-row call (measured directly, not assumed) -- the exact same
+     symptom as calling it unwrapped. `extract_features()`, by contrast,
+     measurably does NOT exhibit this (vectorized pandas/numpy releases
+     the GIL normally) and was left on `run_in_threadpool`. The actual
+     fix routes `predict()` through a small `ProcessPoolExecutor`
+     instead -- a separate OS process has its own GIL, immune to this
+     class of starvation. Lesson for future phases: for a CPU-bound call
+     suspected of blocking the event loop, verify with a controlled
+     concurrent-task test before assuming a thread pool fixed it: an
+     asyncio task that "isn't blocked" at the scheduling level can still
+     be starved for CPU time if the offloaded work never releases the
+     GIL. See `docs/08D_CRITICAL_FIXES.md` §5.

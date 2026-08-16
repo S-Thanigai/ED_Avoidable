@@ -14,9 +14,13 @@ Endpoint:
         with columns: member_id, age, gender, risk_probability, risk_score, risk_category
 """
 
+import asyncio
+import functools
 import io
 import json
+import os
 import sys
+from concurrent.futures import ProcessPoolExecutor
 from datetime import date, datetime
 from pathlib import Path
 from typing import Literal
@@ -28,6 +32,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
+from starlette.concurrency import run_in_threadpool
 
 from feature_engineering import extract_features
 from predict import MODEL_PATH, explain_member, predict
@@ -151,12 +156,72 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# Phase 8D Part 11 -- CORS is now environment-configured rather than
+# hard-coded fully-open ("*"). This is preparation for Phase 9, not a full
+# production hardening pass (no auth/credential handling changes here):
+# CORS_ORIGINS accepts a comma-separated list of allowed origins; unset
+# defaults to the two local Vite dev server addresses so `npm run dev`
+# keeps working out of the box with no configuration required. No Azure
+# URL is hard-coded here -- Phase 9 sets CORS_ORIGINS at deploy time.
+_DEFAULT_CORS_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:5175,http://127.0.0.1:5175"
+CORS_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get("CORS_ORIGINS", _DEFAULT_CORS_ORIGINS).split(",")
+    if origin.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ---------------------------------------------------------------------------
+# Phase 8D Part 7 -- legacy /predict concurrency fix.
+#
+# extract_features() is offloaded via starlette's run_in_threadpool, which
+# is sufficient for it (verified: a real thread-pool call to
+# extract_features() does NOT starve the event loop -- it is vectorized
+# pandas/numpy work that releases the GIL normally between calls).
+#
+# predict(include_shap=True) is NOT offloaded via run_in_threadpool alone.
+# This was verified empirically, not assumed: a controlled test (asyncio
+# task ticking every 0.5s, concurrent with `await run_in_threadpool(predict,
+# ...)` on real data) showed the ticker starved for the ENTIRE ~22s
+# duration of a 300-row predict() call, even though it was correctly
+# running on a separate OS thread. Root cause: predict()'s per-row legacy
+# SHAP TreeExplainer loop (predict.py) holds the GIL near-continuously:
+# CPython threads share ONE global interpreter lock, so a CPU-bound thread
+# that doesn't yield it via I/O or a GIL-releasing C call can still starve
+# every other thread in the process -- including the one running the
+# asyncio event loop -- regardless of which OS thread it happens to run on.
+# A thread pool cannot fix that; only a separate OS PROCESS (its own,
+# independent GIL) can. Hence: a small ProcessPoolExecutor, used only for
+# this specific call.
+_predict_process_pool: ProcessPoolExecutor | None = None
+
+
+def _get_predict_process_pool() -> ProcessPoolExecutor:
+    global _predict_process_pool
+    if _predict_process_pool is None:
+        # max_workers=1: this is a local-demo endpoint the UC07 frontend
+        # never calls (see test_legacy_isolation.py); a second concurrent
+        # /predict call queuing behind the first is an acceptable
+        # trade-off for not spawning multiple heavy Python processes on a
+        # small deployment. The goal here is protecting every OTHER
+        # endpoint's responsiveness while /predict runs, not making
+        # multiple simultaneous /predict calls fast.
+        _predict_process_pool = ProcessPoolExecutor(max_workers=1)
+    return _predict_process_pool
+
+
+@app.on_event("shutdown")
+def _shutdown_predict_process_pool() -> None:
+    global _predict_process_pool
+    if _predict_process_pool is not None:
+        _predict_process_pool.shutdown(wait=False, cancel_futures=True)
+        _predict_process_pool = None
 
 # ---------------------------------------------------------------------------
 # Helper
@@ -308,7 +373,16 @@ async def _extract_all(
     )
 
     try:
-        X, member_ids = extract_features(members_df, ed_visits_df, care_df)
+        # Phase 8D: offloaded to a worker thread -- extract_features() is
+        # synchronous, CPU-bound pandas work over the whole uploaded
+        # population. Calling it directly inside this `async def` handler
+        # would block the single-process event loop for its full
+        # duration, freezing every OTHER concurrent request (including
+        # unrelated ones like GET /health or POST /uc07/decide) until it
+        # returns. run_in_threadpool runs the exact same function,
+        # unmodified, on a worker thread instead -- same inputs, same
+        # outputs, same legacy behavior, just off the event loop.
+        X, member_ids = await run_in_threadpool(extract_features, members_df, ed_visits_df, care_df)
     except Exception as exc:
         raise HTTPException(
             status_code=500,
@@ -329,8 +403,21 @@ async def _run_prediction(
     )
 
     try:
-        result_df = predict(
-            X, member_ids, members_df, ed_visits_df, care_df, include_shap=include_shap
+        # Phase 8D: routed through a PROCESS pool, not a thread pool --
+        # see the module-level comment above _get_predict_process_pool()
+        # for why. Same function, same arguments, same legacy output;
+        # only the execution context changes. functools.partial is used
+        # because ProcessPoolExecutor.submit()/loop.run_in_executor()
+        # takes positional args only, and predict()'s `include_shap` is a
+        # keyword-only-by-convention parameter here.
+        loop = asyncio.get_running_loop()
+        pool = _get_predict_process_pool()
+        result_df = await loop.run_in_executor(
+            pool,
+            functools.partial(
+                predict, X, member_ids, members_df, ed_visits_df, care_df,
+                model_path=MODEL_PATH, include_shap=include_shap,
+            ),
         )
     except Exception as exc:
         raise HTTPException(
@@ -497,7 +584,12 @@ async def explain_member_endpoint(
         X, member_ids, *_ = await _extract_all(members_file, ed_visits_file, care_file)
 
     try:
-        explanation = explain_member(member_id, X, member_ids)
+        # Phase 8D: same offload as /predict above, applied for
+        # consistency -- this endpoint's SHAP call is per-member (much
+        # cheaper, ~70ms) rather than per-population, so it was not the
+        # reported freeze source, but it is the same class of synchronous
+        # CPU-bound call inside an async handler.
+        explanation = await run_in_threadpool(explain_member, member_id, X, member_ids)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except Exception as exc:
