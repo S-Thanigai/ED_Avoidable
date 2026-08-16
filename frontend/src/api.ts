@@ -1,7 +1,10 @@
 import type { PredictResponse, ShapExplanation, UploadFiles } from "./types";
+import { API_BASE_URL } from "./apiConfig";
 
-const API_BASE_URL =
-  (import.meta.env.VITE_API_URL as string | undefined) ?? "http://127.0.0.1:8001";
+// NOTE: this client talks to the LEGACY /predict-json + /explain-member
+// endpoints only (pre-Phase-2 frequent_ED_user model, backend/predict.py).
+// It is isolated from, and never used by, the authoritative UC07 flow --
+// see frontend/src/uc07/api.ts for POST /uc07/decide.
 
 export async function runPrediction(files: UploadFiles): Promise<PredictResponse> {
   if (!files.members || !files.edVisits || !files.care) {

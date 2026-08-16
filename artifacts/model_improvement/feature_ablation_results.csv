@@ -1,0 +1,8 @@
+experiment,feature_count,best_lr_params,operating_threshold_p90,recall_at_p90,precision_at_p90,roc_auc,pr_auc,brier_score,prevalence,pr_auc_no_skill_baseline,log_loss
+A_v1_baseline,59,"{""C"": 0.01, ""class_weight"": null}",0.123776,0.132568,0.127,0.572773,0.12198,0.086142,0.0958,0.0958,0.312874
+B_restructured_windows,55,"{""C"": 0.01, ""class_weight"": null}",0.123835,0.134656,0.129,0.57298,0.122098,0.086138,0.0958,0.0958,0.312864
+C_plus_velocity,58,"{""C"": 0.01, ""class_weight"": null}",0.123948,0.132568,0.127,0.572707,0.121983,0.086144,0.0958,0.0958,0.312899
+D_plus_care_mix_continuity,71,"{""C"": 0.01, ""class_weight"": ""balanced""}",0.598269,0.136743,0.131,0.575076,0.121632,0.242013,0.0958,0.0958,0.676732
+E_plus_access_interactions,77,"{""C"": 10.0, ""class_weight"": null}",0.132715,0.139875,0.134,0.571169,0.118417,0.08646,0.0958,0.0958,0.314921
+F_plus_historical_ed_extras,79,"{""C"": 10.0, ""class_weight"": null}",0.132697,0.140919,0.135,0.572595,0.118622,0.086453,0.0958,0.0958,0.315111
+G_plus_diagnosis,83,"{""C"": 0.01, ""class_weight"": null}",0.127126,0.133612,0.128,0.572238,0.117796,0.086266,0.0958,0.0958,0.313451

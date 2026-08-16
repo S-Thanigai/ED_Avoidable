@@ -1,0 +1,13 @@
+covariate,statistic,barrier_0,barrier_1,delta_1_minus_0,correlation_with_transportation_barrier
+future_potentially_avoidable_ed_90d,prevalence,0.097517,0.302096,0.204579,
+age,mean,53.379685,55.430333,2.050648,0.0437
+clinical_burden,mean,0.86763,1.062269,0.194639,0.0781
+telehealth_available,rate,0.780258,0.635018,-0.145239,-0.1248
+pcp_distance_miles,mean,6.61782,10.457768,3.839948,0.3001
+urgent_care_distance_miles,mean,5.209895,8.291924,3.082029,0.296
+prior_ed_count_270d,mean,0.548222,1.562269,1.014047,0.3225
+prior_potentially_avoidable_ed_count_270d,mean,0.291955,1.27127,0.979315,0.353
+prior_pcp_count_270d,mean,0.470518,0.31566,-0.154858,-0.0848
+prior_urgent_care_count_270d,mean,0.190141,0.257707,0.067566,0.0552
+prior_telehealth_count_270d,mean,0.454882,0.376079,-0.078803,-0.0432
+prior_care_management_count_270d,mean,0.161136,0.245376,0.08424,0.0733

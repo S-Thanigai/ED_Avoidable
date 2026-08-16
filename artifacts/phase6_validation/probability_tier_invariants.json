@@ -1,0 +1,11 @@
+{
+  "n_scored": 10000,
+  "probability_bounds_ok": true,
+  "low_tier_invariant_ok": true,
+  "moderate_tier_invariant_ok": true,
+  "high_tier_invariant_ok": true,
+  "thresholds_loaded_from_metadata_match": true,
+  "moderate_threshold": 0.105986,
+  "high_threshold": 0.213252,
+  "all_passed": true
+}

@@ -1,0 +1,45 @@
+{
+  "model_version": "uc07-risk-synthetic-v1",
+  "dataset_id": "synthetic_uc07_v1",
+  "synthetic_model": true,
+  "index_date": "2026-07-03",
+  "count": 1,
+  "decisions": [
+    {
+      "member_id": "M00001",
+      "risk": {
+        "member_id": "M00001",
+        "probability": 0.186807,
+        "tier": "MODERATE",
+        "contributing_factors": [
+          "Recent potentially avoidable ED utilization contributed to elevated risk.",
+          "Recent utilization trend contributed to elevated risk.",
+          "A historical utilization or access pattern contributed to lower risk."
+        ],
+        "model_version": "uc07-risk-synthetic-v1",
+        "dataset_id": "synthetic_uc07_v1",
+        "synthetic_model": true,
+        "index_date": "2026-07-03",
+        "moderate_threshold": 0.105986,
+        "high_threshold": 0.213252
+      },
+      "navigation": {
+        "destination": "URGENT_CARE",
+        "reason_codes": [
+          "URGENT_CARE_ACCESS_ADVANTAGE",
+          "ELEVATED_FUTURE_RISK"
+        ],
+        "explanation": "Based on meaningfully better access to urgent care than to primary care; an elevated predicted likelihood of future potentially avoidable ED use, a future urgent care visit for non-emergency needs may be a useful future, non-emergency option."
+      },
+      "safety": {
+        "state": "CAUTION",
+        "override": false,
+        "message": "Current clinical/safety context for this encounter was not provided, so this system cannot confirm the current situation is non-emergency. For non-emergency situations only: if you are experiencing a medical emergency, call 911 or go to the nearest emergency department immediately.",
+        "blocked_phrases": [],
+        "context_completeness": "ABSENT",
+        "context_source": "NOT_AVAILABLE"
+      },
+      "disclaimer": "For care navigation only -- never a reason to delay care. This tool flags patterns of potentially avoidable ED use and suggests a lower-acuity next step for FUTURE, non-emergency needs. It does not diagnose, triage, or determine medical necessity, and no output here should ever be read as discouraging emergency care. If you or a member may be experiencing a medical emergency, call 911 or go to the nearest emergency department immediately."
+    }
+  ]
+}

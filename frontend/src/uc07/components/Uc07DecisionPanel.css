@@ -1,0 +1,19 @@
+.uc07-decision-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.uc07-decision-panel__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 6px;
+}
+
+.uc07-decision-panel__disclaimer {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}

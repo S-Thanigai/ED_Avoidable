@@ -1,0 +1,89 @@
+{
+  "results": [
+    {
+      "scenario": "LOW / no proactive navigation",
+      "member": "M00002",
+      "status": 200,
+      "tier": "LOW",
+      "destination": "NO_PROACTIVE_NAVIGATION",
+      "safety": "CAUTION",
+      "context_completeness": "ABSENT",
+      "context_source": "NOT_AVAILABLE",
+      "shape_issues": [],
+      "pass": true
+    },
+    {
+      "scenario": "MODERATE / Primary Care",
+      "member": "M00005",
+      "status": 200,
+      "tier": "MODERATE",
+      "destination": "PRIMARY_CARE",
+      "safety": "CAUTION",
+      "context_completeness": "ABSENT",
+      "context_source": "NOT_AVAILABLE",
+      "shape_issues": [],
+      "pass": true
+    },
+    {
+      "scenario": "Telehealth",
+      "member": "M00006",
+      "status": 200,
+      "tier": "LOW",
+      "destination": "TELEHEALTH",
+      "safety": "CAUTION",
+      "context_completeness": "ABSENT",
+      "context_source": "NOT_AVAILABLE",
+      "shape_issues": [],
+      "pass": true
+    },
+    {
+      "scenario": "Urgent Care",
+      "member": "M00001",
+      "status": 200,
+      "tier": "MODERATE",
+      "destination": "URGENT_CARE",
+      "safety": "CAUTION",
+      "context_completeness": "ABSENT",
+      "context_source": "NOT_AVAILABLE",
+      "shape_issues": [],
+      "pass": true
+    },
+    {
+      "scenario": "Care Management (HIGH)",
+      "member": "M00012",
+      "status": 200,
+      "tier": "HIGH",
+      "destination": "CARE_MANAGEMENT",
+      "safety": "CAUTION",
+      "context_completeness": "ABSENT",
+      "context_source": "NOT_AVAILABLE",
+      "shape_issues": [],
+      "pass": true
+    },
+    {
+      "scenario": "CAUTION (no context)",
+      "member": "M00001",
+      "status": 200,
+      "tier": "MODERATE",
+      "destination": "URGENT_CARE",
+      "safety": "CAUTION",
+      "context_completeness": "ABSENT",
+      "context_source": "NOT_AVAILABLE",
+      "shape_issues": [],
+      "pass": true
+    },
+    {
+      "scenario": "OVERRIDE (red_flag=1)",
+      "member": "M00001",
+      "status": 200,
+      "tier": "MODERATE",
+      "destination": null,
+      "safety": "OVERRIDE",
+      "context_completeness": "PARTIAL",
+      "context_source": "CALLER_SUPPLIED",
+      "shape_issues": [],
+      "pass": true
+    }
+  ],
+  "allPass": true
+}

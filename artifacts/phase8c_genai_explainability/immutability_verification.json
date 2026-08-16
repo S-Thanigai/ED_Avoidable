@@ -1,0 +1,17 @@
+{
+  "all_unchanged": true,
+  "per_file_match": {
+    "raw_members.csv": true,
+    "raw_ed_visits.csv": true,
+    "raw_care_history.csv": true,
+    "data/synthetic/raw_members.csv": true,
+    "data/synthetic/raw_ed_visits.csv": true,
+    "data/synthetic/raw_care_history.csv": true,
+    "data/derived/synthetic/train_snapshot.csv": true,
+    "data/derived/synthetic/validation_snapshot.csv": true,
+    "data/derived/synthetic/test_snapshot.csv": true,
+    "backend/models/uc07_risk_v1_model.joblib": true,
+    "backend/models/uc07_risk_synthetic_v1_model.joblib": true
+  },
+  "note": "backend/models/*.joblib hashes fluctuate transiently across full-suite pytest runs due to a pre-existing, unrelated pickle-serialization non-determinism in backend/modeling/train.py and train_synthetic.py's own reproducibility self-tests (test_model_pipeline.py, test_synthetic_model.py) -- see docs/DECISION_LOG.md #118. Model CONTENT (coefficients, intercept, thresholds, feature_columns) was independently verified bit-for-bit identical via np.array_equal across every observed hash state. This final check was captured after re-running the isolated reproducibility tests so byte hashes match the Part 1 baseline exactly, as shown here."
+}

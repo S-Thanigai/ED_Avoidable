@@ -1,0 +1,8 @@
+perturbation,n,mean_probability_change,median_probability_change,max_abs_probability_change,n_tier_crossings,pct_tier_crossings,label
+telehealth_available: flip 0<->1,10000,0.019364,0.031281,0.10475,3860,0.386,model sensitivity / counterfactual feature perturbation -- NOT clinical causality
+pcp_distance_miles: +1 mile (tiny),10000,0.002375,0.001986,0.006276,185,0.0185,model sensitivity / counterfactual feature perturbation -- NOT clinical causality
+pcp_distance_miles: +5 miles,10000,0.012282,0.010352,0.031371,963,0.0963,model sensitivity / counterfactual feature perturbation -- NOT clinical causality
+pcp_distance_miles: +10 miles (large),10000,0.025616,0.021803,0.06268,2145,0.2145,model sensitivity / counterfactual feature perturbation -- NOT clinical causality
+urgent_care_distance_miles: +1 mile (tiny),10000,0.001315,0.001099,0.003489,108,0.0108,model sensitivity / counterfactual feature perturbation -- NOT clinical causality
+urgent_care_distance_miles: +5 miles,10000,0.0067,0.005623,0.017442,518,0.0518,model sensitivity / counterfactual feature perturbation -- NOT clinical causality
+urgent_care_distance_miles: +10 miles (large),10000,0.013719,0.011576,0.034873,1066,0.1066,model sensitivity / counterfactual feature perturbation -- NOT clinical causality

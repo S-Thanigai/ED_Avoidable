@@ -1,0 +1,101 @@
+{
+  "phase": "Phase 3 -- Point-in-Time ML Data Pipeline",
+  "version": "phase3-v1",
+  "dataset_id": "original",
+  "synthetic": false,
+  "generated_at_utc": "2026-08-16T11:35:07.938684+00:00",
+  "raw_dataset_sha256": {
+    "raw_members.csv": "b94df89ed042a8feaa1bb46d7939e124fb9f6b03308b11da045412a427b78c46",
+    "raw_ed_visits.csv": "f8db1839fb7966c4230c771252a3b935c318d0838de9258dc29de42d042f5d47",
+    "raw_care_history.csv": "358d3033faa4e0529aed834cd8847f72d0b5d4ca51fa76748523fab790c81657"
+  },
+  "observation_window_days": 270,
+  "outcome_window_days": 90,
+  "boundary_semantics": {
+    "observation": "index_date - observation_window_days <= event_date < index_date",
+    "outcome": "index_date <= event_date < index_date + outcome_window_days"
+  },
+  "snapshot_index_dates": {
+    "train": "2025-10-05",
+    "validation": "2026-01-03",
+    "test": "2026-04-03"
+  },
+  "target_column": "future_potentially_avoidable_ed_90d",
+  "target_definition": "1 if the member has >=1 ED encounter classified POTENTIALLY_AVOIDABLE in the snapshot's 90-day outcome window, else 0. UNCERTAIN and PROTECTED_OR_HIGH_ACUITY outcome-window encounters never create a positive label on their own.",
+  "encounter_state_definition": {
+    "PROTECTED_OR_HIGH_ACUITY": "red_flag==1 OR icu==1 OR admitted==1 OR major_procedure==1 OR triage_level in {1,2} (absolute precedence)",
+    "POTENTIALLY_AVOIDABLE": "no safety exclusion AND triage_level in {4,5}",
+    "UNCERTAIN": "no safety exclusion AND triage_level == 3"
+  },
+  "snapshots": {
+    "train": {
+      "index_date": "2025-10-05",
+      "observation_start": "2025-01-08",
+      "observation_end_exclusive": "2025-10-05",
+      "outcome_start_inclusive": "2025-10-05",
+      "outcome_end_exclusive": "2026-01-03",
+      "row_count": 10000,
+      "positive_count": 904,
+      "negative_count": 9096,
+      "prevalence": 0.0904,
+      "feature_count": 59,
+      "total_outcome_ed_encounters": 2238,
+      "potentially_avoidable": 950,
+      "protected_or_high_acuity": 649,
+      "uncertain": 639
+    },
+    "validation": {
+      "index_date": "2026-01-03",
+      "observation_start": "2025-04-08",
+      "observation_end_exclusive": "2026-01-03",
+      "outcome_start_inclusive": "2026-01-03",
+      "outcome_end_exclusive": "2026-04-03",
+      "row_count": 10000,
+      "positive_count": 958,
+      "negative_count": 9042,
+      "prevalence": 0.0958,
+      "feature_count": 59,
+      "total_outcome_ed_encounters": 2325,
+      "potentially_avoidable": 997,
+      "protected_or_high_acuity": 652,
+      "uncertain": 676
+    },
+    "test": {
+      "index_date": "2026-04-03",
+      "observation_start": "2025-07-07",
+      "observation_end_exclusive": "2026-04-03",
+      "outcome_start_inclusive": "2026-04-03",
+      "outcome_end_exclusive": "2026-07-02",
+      "row_count": 10000,
+      "positive_count": 908,
+      "negative_count": 9092,
+      "prevalence": 0.0908,
+      "feature_count": 59,
+      "total_outcome_ed_encounters": 2275,
+      "potentially_avoidable": 947,
+      "protected_or_high_acuity": 645,
+      "uncertain": 683
+    }
+  },
+  "member_overlap": {
+    "member_id_overlap_all_snapshots": {
+      "train_and_validation": 10000,
+      "train_and_test": 10000,
+      "validation_and_test": 10000
+    },
+    "member_id_overlap_all_three": 10000,
+    "positive_label_overlap_pairwise": {
+      "train_and_validation": 66,
+      "train_and_test": 69,
+      "validation_and_test": 67
+    },
+    "note": "Members legitimately appear in more than one snapshot because all three snapshots draw from the same population at different, non-overlapping points in time. This is NOT outcome leakage -- each snapshot's features and target are computed strictly from that snapshot's own window. See docs/02_UC07_AND_DATA_DESIGN.md section 9.4."
+  },
+  "validation_report_summary": {
+    "all_passed": true
+  },
+  "code_version": {
+    "python": "3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]",
+    "pandas": "3.0.5"
+  }
+}

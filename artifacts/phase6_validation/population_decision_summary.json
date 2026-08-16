@@ -1,0 +1,41 @@
+{
+  "n_members": 10000,
+  "risk_tier_counts": {
+    "LOW": 6527,
+    "MODERATE": 2465,
+    "HIGH": 1008
+  },
+  "navigation_destination_counts": {
+    "PRIMARY_CARE": 2187,
+    "URGENT_CARE": 403,
+    "TELEHEALTH": 1361,
+    "CARE_MANAGEMENT": 2989,
+    "NO_PROACTIVE_NAVIGATION": 3060,
+    "NONE_OVERRIDE": 0
+  },
+  "safety_state_counts": {
+    "CLEAR": 0,
+    "CAUTION": 10000,
+    "OVERRIDE": 0
+  },
+  "note_on_safety_counts": "current_safety_context intentionally not supplied for the static population run (no such field exists in the frozen TEST snapshot); every decision therefore resolves to CAUTION unless already OVERRIDE-eligible from another path. Scenario-based safety testing (safety_override_matrix.csv / missing_safety_context_tests.csv) covers OVERRIDE/CLEAR explicitly.",
+  "cross_agent_consistency": {
+    "distinct_model_versions": [
+      "uc07-risk-synthetic-v1"
+    ],
+    "distinct_dataset_ids": [
+      "synthetic_uc07_v1"
+    ],
+    "distinct_synthetic_flags": [
+      true
+    ],
+    "distinct_moderate_thresholds": [
+      0.105986
+    ],
+    "distinct_high_thresholds": [
+      0.213252
+    ],
+    "all_consistent": true,
+    "violations": []
+  }
+}

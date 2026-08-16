@@ -1,0 +1,40 @@
+{
+  "phase": "8",
+  "objective": "Frontend integration against the authoritative /uc07/decide multi-agent backend",
+  "authoritative_endpoint": "POST /uc07/decide",
+  "frontend_framework": "React 19 + TypeScript + Vite",
+  "pre_existing_frontend": "legacy /predict-json + /explain-member dashboard (frequent_ED_user model)",
+  "legacy_isolation": {
+    "kept": true,
+    "labeled": "Legacy Demo tab, explicit banner naming the pre-Phase-2 model",
+    "used_by_primary_uc07_ui": false
+  },
+  "backend_baseline_tests": 505,
+  "backend_final_tests": 505,
+  "backend_regression": "PASS (0 failed, no backend code changed)",
+  "frontend_tests_added": 28,
+  "frontend_lint": "PASS",
+  "frontend_typecheck": "PASS",
+  "frontend_build": "PASS",
+  "integration_smoke_test": {
+    "scenarios_run": 7,
+    "all_passed": true,
+    "additional_error_cases_verified": ["unknown_member_404", "invalid_safety_context_422"]
+  },
+  "no_frontend_business_logic": {
+    "risk_tier_calculated_client_side": false,
+    "navigation_destination_calculated_client_side": false,
+    "safety_state_calculated_client_side": false,
+    "care_management_eligibility_calculated_client_side": false
+  },
+  "safety_context_contract": {
+    "missing_never_defaults_to_false": true,
+    "completeness_states_surfaced": ["COMPLETE", "PARTIAL", "ABSENT"],
+    "source_states_surfaced": ["CALLER_SUPPLIED", "SYSTEM_DERIVED", "NOT_AVAILABLE"],
+    "caller_supplied_never_labeled_verified": true
+  },
+  "model_unchanged": true,
+  "thresholds_unchanged": true,
+  "datasets_unchanged": true,
+  "docker_or_azure_started": false
+}

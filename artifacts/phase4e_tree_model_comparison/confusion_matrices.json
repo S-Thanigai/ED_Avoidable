@@ -1,0 +1,166 @@
+{
+  "logistic_regression": {
+    "0.50": {
+      "threshold": 0.5,
+      "n_selected": 187,
+      "pct_selected": 0.0187,
+      "true_positives": 128,
+      "false_positives": 59,
+      "false_negatives": 1046,
+      "true_negatives": 8767,
+      "precision": 0.684492,
+      "recall": 0.109029,
+      "specificity": 0.993315,
+      "f1": 0.188097
+    },
+    "MODERATE": {
+      "threshold": 0.105986,
+      "n_selected": 3500,
+      "pct_selected": 0.35,
+      "true_positives": 722,
+      "false_positives": 2778,
+      "false_negatives": 452,
+      "true_negatives": 6048,
+      "precision": 0.206286,
+      "recall": 0.614991,
+      "specificity": 0.685248,
+      "f1": 0.308943
+    },
+    "HIGH": {
+      "threshold": 0.213252,
+      "n_selected": 1000,
+      "pct_selected": 0.1,
+      "true_positives": 366,
+      "false_positives": 634,
+      "false_negatives": 808,
+      "true_negatives": 8192,
+      "precision": 0.366,
+      "recall": 0.311755,
+      "specificity": 0.928167,
+      "f1": 0.336707
+    }
+  },
+  "random_forest": {
+    "0.50": {
+      "threshold": 0.5,
+      "n_selected": 2045,
+      "pct_selected": 0.2045,
+      "true_positives": 554,
+      "false_positives": 1491,
+      "false_negatives": 620,
+      "true_negatives": 7335,
+      "precision": 0.270905,
+      "recall": 0.471891,
+      "specificity": 0.831067,
+      "f1": 0.344206
+    },
+    "MODERATE": {
+      "threshold": 0.105986,
+      "n_selected": 10000,
+      "pct_selected": 1.0,
+      "true_positives": 1174,
+      "false_positives": 8826,
+      "false_negatives": 0,
+      "true_negatives": 0,
+      "precision": 0.1174,
+      "recall": 1.0,
+      "specificity": 0.0,
+      "f1": 0.210131
+    },
+    "HIGH": {
+      "threshold": 0.213252,
+      "n_selected": 10000,
+      "pct_selected": 1.0,
+      "true_positives": 1174,
+      "false_positives": 8826,
+      "false_negatives": 0,
+      "true_negatives": 0,
+      "precision": 0.1174,
+      "recall": 1.0,
+      "specificity": 0.0,
+      "f1": 0.210131
+    }
+  },
+  "xgboost": {
+    "0.50": {
+      "threshold": 0.5,
+      "n_selected": 230,
+      "pct_selected": 0.023,
+      "true_positives": 145,
+      "false_positives": 85,
+      "false_negatives": 1029,
+      "true_negatives": 8741,
+      "precision": 0.630435,
+      "recall": 0.123509,
+      "specificity": 0.990369,
+      "f1": 0.206553
+    },
+    "MODERATE": {
+      "threshold": 0.105986,
+      "n_selected": 3204,
+      "pct_selected": 0.3204,
+      "true_positives": 676,
+      "false_positives": 2528,
+      "false_negatives": 498,
+      "true_negatives": 6298,
+      "precision": 0.210986,
+      "recall": 0.575809,
+      "specificity": 0.713574,
+      "f1": 0.308817
+    },
+    "HIGH": {
+      "threshold": 0.213252,
+      "n_selected": 972,
+      "pct_selected": 0.0972,
+      "true_positives": 355,
+      "false_positives": 617,
+      "false_negatives": 819,
+      "true_negatives": 8209,
+      "precision": 0.365226,
+      "recall": 0.302385,
+      "specificity": 0.930093,
+      "f1": 0.330848
+    }
+  },
+  "hist_gradient_boosting": {
+    "0.50": {
+      "threshold": 0.5,
+      "n_selected": 2448,
+      "pct_selected": 0.2448,
+      "true_positives": 598,
+      "false_positives": 1850,
+      "false_negatives": 576,
+      "true_negatives": 6976,
+      "precision": 0.244281,
+      "recall": 0.50937,
+      "specificity": 0.790392,
+      "f1": 0.330204
+    },
+    "MODERATE": {
+      "threshold": 0.105986,
+      "n_selected": 10000,
+      "pct_selected": 1.0,
+      "true_positives": 1174,
+      "false_positives": 8826,
+      "false_negatives": 0,
+      "true_negatives": 0,
+      "precision": 0.1174,
+      "recall": 1.0,
+      "specificity": 0.0,
+      "f1": 0.210131
+    },
+    "HIGH": {
+      "threshold": 0.213252,
+      "n_selected": 9961,
+      "pct_selected": 0.9961,
+      "true_positives": 1172,
+      "false_positives": 8789,
+      "false_negatives": 2,
+      "true_negatives": 37,
+      "precision": 0.117659,
+      "recall": 0.998296,
+      "specificity": 0.004192,
+      "f1": 0.210507
+    }
+  }
+}

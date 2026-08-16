@@ -1,0 +1,4 @@
+variant,feature_count,best_lr_params,roc_auc,pr_auc,brier_score,prevalence,pr_auc_no_skill_baseline,log_loss
+baseline_nested,59,"{""C"": 0.01, ""class_weight"": null}",0.572773,0.12198,0.086142,0.0958,0.0958,0.312874
+reduced_nested_30_90_270,57,"{""C"": 0.01, ""class_weight"": null}",0.573071,0.122093,0.086136,0.0958,0.0958,0.312851
+non_overlapping_bands,59,"{""C"": 0.01, ""class_weight"": null}",0.571679,0.121766,0.08616,0.0958,0.0958,0.313021
