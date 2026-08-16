@@ -59,6 +59,15 @@ export function WhyFlaggedSection({ risk }: { risk: RiskAssessment }) {
       )}
 
       <p className="why-flagged__method">Explanation method: {METHOD_LABEL[risk.explanation_method]}</p>
+      {/* Phase 8D Part 10 -- SHAP math is unchanged; this only adds a UI
+          caveat about how to READ correlation-aware attribution values
+          (see docs/DECISION_LOG.md #117: SHAP's correlation-aware masker
+          can attribute a factor's contribution differently than a naive
+          per-feature reading when features are correlated). */}
+      <p className="why-flagged__caveat">
+        Model contribution values are attribution signals and may reflect correlated features; they should not be
+        interpreted as causal effects.
+      </p>
     </section>
   );
 }

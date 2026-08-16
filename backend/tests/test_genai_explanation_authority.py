@@ -89,11 +89,16 @@ def test_19_genai_cannot_change_probability_even_if_it_tries(monkeypatch):
 
 
 def test_20_genai_cannot_change_tier_wrong_tier_text_is_rejected(monkeypatch):
+    """Structured `risk_tier` echo is CORRECT (LOW) here -- this test
+    exercises the free-text consistency layer specifically, not the
+    structural-echo layer (see test_4_5_structured_enum_mismatch_* in
+    test_phase8d_genai_hardening.py for the structural-mismatch case)."""
     monkeypatch.setenv("GENAI_ENABLED", "true")
     config = genai_explanation.load_config()
     bad_raw = {
+        "risk_tier": "LOW", "navigation_destination": "NONE", "safety_state": "OVERRIDE",
         "summary": "ok", "risk_explanation": "This member is actually high risk.",
-        "navigation_explanation": "ok", "safety_explanation": "ok", "disclaimer": "ok",
+        "navigation_explanation": "ok", "safety_explanation": "A safety override was triggered.",
     }
     monkeypatch.setattr(genai_explanation, "_call_ollama", lambda cfg, payload: bad_raw)
     payload = json.loads(json.dumps(OVERRIDE_PAYLOAD))
@@ -103,12 +108,15 @@ def test_20_genai_cannot_change_tier_wrong_tier_text_is_rejected(monkeypatch):
 
 
 def test_21_genai_cannot_change_navigation_wrong_destination_text_is_rejected(monkeypatch):
+    """Structured `navigation_destination` echo is CORRECT (CARE_MANAGEMENT)
+    here -- exercises the free-text consistency layer specifically."""
     monkeypatch.setenv("GENAI_ENABLED", "true")
     config = genai_explanation.load_config()
     bad_raw = {
+        "risk_tier": "LOW", "navigation_destination": "CARE_MANAGEMENT", "safety_state": "OVERRIDE",
         "summary": "ok", "risk_explanation": "ok",
         "navigation_explanation": "This member should go to urgent care instead.",
-        "safety_explanation": "ok", "disclaimer": "ok",
+        "safety_explanation": "A safety override was triggered.",
     }
     monkeypatch.setattr(genai_explanation, "_call_ollama", lambda cfg, payload: bad_raw)
     payload = json.loads(json.dumps(OVERRIDE_PAYLOAD))
@@ -118,12 +126,14 @@ def test_21_genai_cannot_change_navigation_wrong_destination_text_is_rejected(mo
 
 
 def test_22_genai_cannot_change_safety_state_wrong_state_text_is_rejected(monkeypatch):
+    """Structured `safety_state` echo is CORRECT (OVERRIDE) here --
+    exercises the free-text consistency layer specifically."""
     monkeypatch.setenv("GENAI_ENABLED", "true")
     config = genai_explanation.load_config()
     bad_raw = {
+        "risk_tier": "LOW", "navigation_destination": "NONE", "safety_state": "OVERRIDE",
         "summary": "ok", "risk_explanation": "ok", "navigation_explanation": "ok",
         "safety_explanation": "The safety state is clear, no override is in effect.",
-        "disclaimer": "ok",
     }
     monkeypatch.setattr(genai_explanation, "_call_ollama", lambda cfg, payload: bad_raw)
     result = genai_explanation.generate_explanation(OVERRIDE_PAYLOAD, config)
@@ -133,14 +143,21 @@ def test_22_genai_cannot_change_safety_state_wrong_state_text_is_rejected(monkey
 # ---- 23. OVERRIDE remains OVERRIDE regardless of Qwen's output ----
 
 def test_23_override_state_explanation_always_says_override_even_on_fallback(monkeypatch):
+    """Regression test for the Phase 8C health-check CRITICAL finding: a
+    vague-but-wrong reassurance ("everything is fine") for an actual
+    OVERRIDE named no OTHER state's exact phrase, so the OLD
+    phrase-only-rejection check would have missed it. The structured
+    `safety_state` echo here is even CORRECT (OVERRIDE) -- proving the
+    free-text reassurance-phrase + required-positive-phrase layers catch
+    this independently of the structured echo layer."""
     monkeypatch.setenv("GENAI_ENABLED", "true")
     config = genai_explanation.load_config()
     bad_raw = {
+        "risk_tier": "LOW", "navigation_destination": "NONE", "safety_state": "OVERRIDE",
         "summary": "Everything is fine, no concerns.",
         "risk_explanation": "ok",
         "navigation_explanation": "ok",
         "safety_explanation": "The safety state is clear; proceed as normal.",
-        "disclaimer": "ok",
     }
     monkeypatch.setattr(genai_explanation, "_call_ollama", lambda cfg, payload: bad_raw)
     result = genai_explanation.generate_explanation(OVERRIDE_PAYLOAD, config)
@@ -152,11 +169,13 @@ def test_23_override_accepted_genai_text_must_itself_say_override(monkeypatch):
     monkeypatch.setenv("GENAI_ENABLED", "true")
     config = genai_explanation.load_config()
     good_raw = {
+        "risk_tier": "LOW",
+        "navigation_destination": "NONE",
+        "safety_state": "OVERRIDE",
         "summary": "A safety override was triggered for this encounter.",
         "risk_explanation": "This member's modeled risk tier is low.",
         "navigation_explanation": "No proactive navigation applies.",
         "safety_explanation": "A safety override was triggered based on the supplied current information.",
-        "disclaimer": "ok",
     }
     monkeypatch.setattr(genai_explanation, "_call_ollama", lambda cfg, payload: good_raw)
     result = genai_explanation.generate_explanation(OVERRIDE_PAYLOAD, config)

@@ -68,3 +68,10 @@
   font-size: 0.78rem;
   color: var(--text-muted);
 }
+
+.why-flagged__caveat {
+  margin: 0;
+  font-size: 0.76rem;
+  font-style: italic;
+  color: var(--text-muted);
+}
