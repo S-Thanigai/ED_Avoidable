@@ -1,0 +1,17 @@
+case,status_code,clean_4xx_or_2xx,json_parseable,no_raw_traceback_leaked
+negative pcp_distance_miles,200,True,True,True
+extreme urgent_care_distance_miles,200,True,True,True
+invalid binary transportation_barrier=7,200,True,True,True
+invalid triage_level=9 in ed_visits (in-window row),422,True,True,True
+NaN age,200,True,True,True
+negative age,200,True,True,True
+extreme age=999,200,True,True,True
+unknown member_id,404,True,True,True
+missing required column transportation_barrier,422,True,True,True
+empty members file,400,True,True,True
+extra unexpected column,200,True,True,True
+current_safety_context invalid binary (2),422,True,True,True
+current_safety_context invalid triage (0),422,True,True,True
+current_safety_context invalid triage (6),422,True,True,True
+current_safety_context not an object,422,True,True,True
+no member_id (full population),200,True,True,True

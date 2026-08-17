@@ -1,0 +1,35 @@
+{
+  "framework": "vitest + @testing-library/react (jsdom)",
+  "pre_existing_test_infra": false,
+  "test_files": 4,
+  "tests_passed": 28,
+  "tests_failed": 0,
+  "coverage_of_required_scenarios": {
+    "1_LOW_decision_rendering": "PASS",
+    "2_MODERATE_decision_rendering": "PASS",
+    "3_HIGH_decision_rendering": "PASS",
+    "4_PRIMARY_CARE_rendering": "PASS",
+    "5_URGENT_CARE_rendering": "PASS",
+    "6_TELEHEALTH_rendering": "PASS",
+    "7_CARE_MANAGEMENT_rendering": "PASS",
+    "8_NO_PROACTIVE_NAVIGATION_rendering": "PASS",
+    "9_CLEAR_rendering": "PASS",
+    "10_CAUTION_rendering": "PASS",
+    "11_OVERRIDE_rendering": "PASS",
+    "12_PARTIAL_context_rendering": "PASS",
+    "13_ABSENT_context_rendering": "PASS",
+    "14_COMPLETE_context_rendering": "PASS",
+    "15_synthetic_disclosure": "PASS",
+    "16_model_version_display": "PASS",
+    "17_loading_state": "PASS",
+    "18_validation_error": "PASS",
+    "19_backend_unavailable": "PASS",
+    "20_no_client_side_fabricated_recommendation": "PASS"
+  },
+  "test_files_list": [
+    "src/uc07/__tests__/Uc07DecisionPanel.test.tsx",
+    "src/uc07/__tests__/DecisionStates.test.tsx",
+    "src/uc07/__tests__/api.test.ts",
+    "src/uc07/__tests__/SafetyContextForm.test.tsx"
+  ]
+}

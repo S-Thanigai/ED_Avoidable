@@ -1,0 +1,646 @@
+{
+  "identifier_columns": [
+    "member_id"
+  ],
+  "metadata_columns": [
+    "index_date"
+  ],
+  "target_columns": [
+    "future_potentially_avoidable_ed_90d"
+  ],
+  "fairness_audit_columns": [
+    "gender"
+  ],
+  "excluded_feature_groups": [
+    {
+      "group": "diagnosis_*",
+      "reason": "Excluded from the Phase 3 baseline feature set. Phase 1 found the previous unwindowed diagnosis crosstab leaking ED-utilization volume (~36% of that model's feature importance); Phase 2 additionally verified diagnosis carries no measurable acuity signal in this dataset. Predictive value as a properly point-in-time-windowed feature is unverified and is a candidate for controlled future experimentation, not part of this baseline."
+    },
+    {
+      "group": "outcome-window encounter fields",
+      "reason": "triage_level, red_flag, admitted, icu, major_procedure, diagnosis, and cost of outcome-window encounters are label-only by design (docs/02_UC07_AND_DATA_DESIGN.md section 12) and never appear as features."
+    }
+  ],
+  "features": [
+    {
+      "feature_name": "member_id",
+      "category": "identifier",
+      "source_dataset": "raw_members.csv",
+      "temporal_window": "n/a",
+      "static_or_longitudinal": "static",
+      "model_candidate": false,
+      "leakage_status": "identifier_excluded",
+      "description": "Member identifier. Never a model feature."
+    },
+    {
+      "feature_name": "index_date",
+      "category": "metadata",
+      "source_dataset": "derived (snapshot definition)",
+      "temporal_window": "n/a",
+      "static_or_longitudinal": "static",
+      "model_candidate": false,
+      "leakage_status": "metadata_excluded",
+      "description": "The snapshot's fixed point-in-time index date. Never a model feature."
+    },
+    {
+      "feature_name": "age",
+      "category": "demographic",
+      "source_dataset": "raw_members.csv",
+      "temporal_window": "static",
+      "static_or_longitudinal": "static",
+      "model_candidate": true,
+      "leakage_status": "safe_static",
+      "description": "Member age in years."
+    },
+    {
+      "feature_name": "gender",
+      "category": "demographic",
+      "source_dataset": "raw_members.csv",
+      "temporal_window": "static",
+      "static_or_longitudinal": "static",
+      "model_candidate": true,
+      "leakage_status": "safe_static",
+      "description": "Member gender (M/F). Retained as a candidate predictor; flagged for subgroup/fairness validation before production use -- see docs/02_UC07_AND_DATA_DESIGN.md section 13."
+    },
+    {
+      "feature_name": "diabetes",
+      "category": "chronic_condition",
+      "source_dataset": "raw_members.csv",
+      "temporal_window": "static",
+      "static_or_longitudinal": "static",
+      "model_candidate": true,
+      "leakage_status": "safe_static",
+      "description": "Chronic diabetes flag (0/1)."
+    },
+    {
+      "feature_name": "copd",
+      "category": "chronic_condition",
+      "source_dataset": "raw_members.csv",
+      "temporal_window": "static",
+      "static_or_longitudinal": "static",
+      "model_candidate": true,
+      "leakage_status": "safe_static",
+      "description": "Chronic COPD flag (0/1)."
+    },
+    {
+      "feature_name": "hypertension",
+      "category": "chronic_condition",
+      "source_dataset": "raw_members.csv",
+      "temporal_window": "static",
+      "static_or_longitudinal": "static",
+      "model_candidate": true,
+      "leakage_status": "safe_static",
+      "description": "Chronic hypertension flag (0/1)."
+    },
+    {
+      "feature_name": "chf",
+      "category": "chronic_condition",
+      "source_dataset": "raw_members.csv",
+      "temporal_window": "static",
+      "static_or_longitudinal": "static",
+      "model_candidate": true,
+      "leakage_status": "safe_static",
+      "description": "Chronic heart failure flag (0/1)."
+    },
+    {
+      "feature_name": "asthma",
+      "category": "chronic_condition",
+      "source_dataset": "raw_members.csv",
+      "temporal_window": "static",
+      "static_or_longitudinal": "static",
+      "model_candidate": true,
+      "leakage_status": "safe_static",
+      "description": "Chronic asthma flag (0/1)."
+    },
+    {
+      "feature_name": "ckd",
+      "category": "chronic_condition",
+      "source_dataset": "raw_members.csv",
+      "temporal_window": "static",
+      "static_or_longitudinal": "static",
+      "model_candidate": true,
+      "leakage_status": "safe_static",
+      "description": "Chronic kidney disease flag (0/1)."
+    },
+    {
+      "feature_name": "num_chronic_conditions",
+      "category": "chronic_condition",
+      "source_dataset": "raw_members.csv",
+      "temporal_window": "static",
+      "static_or_longitudinal": "static",
+      "model_candidate": true,
+      "leakage_status": "safe_static",
+      "description": "Count of chronic conditions (redundant with the 6 individual flags; retained per Phase 2 approval -- monitor for multicollinearity in modeling)."
+    },
+    {
+      "feature_name": "transportation_barrier",
+      "category": "access",
+      "source_dataset": "raw_members.csv",
+      "temporal_window": "static",
+      "static_or_longitudinal": "static",
+      "model_candidate": true,
+      "leakage_status": "safe_static",
+      "description": "Member-reported transportation barrier flag (0/1)."
+    },
+    {
+      "feature_name": "telehealth_available",
+      "category": "access",
+      "source_dataset": "raw_members.csv",
+      "temporal_window": "static",
+      "static_or_longitudinal": "static",
+      "model_candidate": true,
+      "leakage_status": "safe_static",
+      "description": "Whether telehealth is available to this member (0/1)."
+    },
+    {
+      "feature_name": "pcp_distance_miles",
+      "category": "access",
+      "source_dataset": "raw_members.csv",
+      "temporal_window": "static",
+      "static_or_longitudinal": "static",
+      "model_candidate": true,
+      "leakage_status": "safe_static",
+      "description": "Distance in miles to the member's primary care provider."
+    },
+    {
+      "feature_name": "urgent_care_distance_miles",
+      "category": "access",
+      "source_dataset": "raw_members.csv",
+      "temporal_window": "static",
+      "static_or_longitudinal": "static",
+      "model_candidate": true,
+      "leakage_status": "safe_static",
+      "description": "Distance in miles to the nearest urgent care."
+    },
+    {
+      "feature_name": "clinical_burden",
+      "category": "chronic_condition",
+      "source_dataset": "derived (raw_members.csv)",
+      "temporal_window": "static",
+      "static_or_longitudinal": "static",
+      "model_candidate": true,
+      "leakage_status": "safe_static",
+      "description": "Sum of the 6 chronic-condition flags."
+    },
+    {
+      "feature_name": "access_burden",
+      "category": "access",
+      "source_dataset": "derived (raw_members.csv)",
+      "temporal_window": "static",
+      "static_or_longitudinal": "static",
+      "model_candidate": true,
+      "leakage_status": "safe_static",
+      "description": "transportation_barrier + (pcp_distance_miles>10) + (urgent_care_distance_miles>10)."
+    },
+    {
+      "feature_name": "prior_ed_count_30d",
+      "category": "prior_ed_utilization",
+      "source_dataset": "raw_ed_visits.csv",
+      "temporal_window": "30d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Total count of ED encounters (any state) in the 30-day window strictly before index_date."
+    },
+    {
+      "feature_name": "prior_ed_count_90d",
+      "category": "prior_ed_utilization",
+      "source_dataset": "raw_ed_visits.csv",
+      "temporal_window": "90d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Total count of ED encounters (any state) in the 90-day window strictly before index_date."
+    },
+    {
+      "feature_name": "prior_ed_count_180d",
+      "category": "prior_ed_utilization",
+      "source_dataset": "raw_ed_visits.csv",
+      "temporal_window": "180d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Total count of ED encounters (any state) in the 180-day window strictly before index_date."
+    },
+    {
+      "feature_name": "prior_ed_count_270d",
+      "category": "prior_ed_utilization",
+      "source_dataset": "raw_ed_visits.csv",
+      "temporal_window": "270d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Total count of ED encounters (any state) in the 270-day window strictly before index_date."
+    },
+    {
+      "feature_name": "prior_potentially_avoidable_ed_count_30d",
+      "category": "prior_ed_utilization",
+      "source_dataset": "raw_ed_visits.csv",
+      "temporal_window": "30d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Count of prior ED encounters classified POTENTIALLY_AVOIDABLE in the 30-day window strictly before index_date."
+    },
+    {
+      "feature_name": "prior_potentially_avoidable_ed_count_90d",
+      "category": "prior_ed_utilization",
+      "source_dataset": "raw_ed_visits.csv",
+      "temporal_window": "90d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Count of prior ED encounters classified POTENTIALLY_AVOIDABLE in the 90-day window strictly before index_date."
+    },
+    {
+      "feature_name": "prior_potentially_avoidable_ed_count_180d",
+      "category": "prior_ed_utilization",
+      "source_dataset": "raw_ed_visits.csv",
+      "temporal_window": "180d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Count of prior ED encounters classified POTENTIALLY_AVOIDABLE in the 180-day window strictly before index_date."
+    },
+    {
+      "feature_name": "prior_potentially_avoidable_ed_count_270d",
+      "category": "prior_ed_utilization",
+      "source_dataset": "raw_ed_visits.csv",
+      "temporal_window": "270d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Count of prior ED encounters classified POTENTIALLY_AVOIDABLE in the 270-day window strictly before index_date."
+    },
+    {
+      "feature_name": "prior_protected_ed_count_90d",
+      "category": "prior_ed_utilization",
+      "source_dataset": "raw_ed_visits.csv",
+      "temporal_window": "90d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Count of prior ED encounters classified PROTECTED_OR_HIGH_ACUITY in the 90-day window strictly before index_date."
+    },
+    {
+      "feature_name": "prior_protected_ed_count_270d",
+      "category": "prior_ed_utilization",
+      "source_dataset": "raw_ed_visits.csv",
+      "temporal_window": "270d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Count of prior ED encounters classified PROTECTED_OR_HIGH_ACUITY in the 270-day window strictly before index_date."
+    },
+    {
+      "feature_name": "prior_uncertain_ed_count_90d",
+      "category": "prior_ed_utilization",
+      "source_dataset": "raw_ed_visits.csv",
+      "temporal_window": "90d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Count of prior ED encounters classified UNCERTAIN in the 90-day window strictly before index_date."
+    },
+    {
+      "feature_name": "prior_uncertain_ed_count_270d",
+      "category": "prior_ed_utilization",
+      "source_dataset": "raw_ed_visits.csv",
+      "temporal_window": "270d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Count of prior ED encounters classified UNCERTAIN in the 270-day window strictly before index_date."
+    },
+    {
+      "feature_name": "days_since_prior_ed",
+      "category": "prior_ed_recency",
+      "source_dataset": "raw_ed_visits.csv",
+      "temporal_window": "270d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Days between the member's most recent any ED encounter strictly before index_date and index_date, capped by the 270-day observation window. NaN if no such encounter falls within the observation window (see companion has_prior_* flag)."
+    },
+    {
+      "feature_name": "has_prior_ed",
+      "category": "prior_ed_recency",
+      "source_dataset": "raw_ed_visits.csv",
+      "temporal_window": "270d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Explicit 0/1 flag: whether ed has >=1 qualifying prior event within the 270-day observation window. Companion to the paired days_since_prior_* column's NaN representation."
+    },
+    {
+      "feature_name": "days_since_prior_potentially_avoidable_ed",
+      "category": "prior_ed_recency",
+      "source_dataset": "raw_ed_visits.csv",
+      "temporal_window": "270d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Days between the member's most recent an ED encounter classified POTENTIALLY_AVOIDABLE strictly before index_date and index_date, capped by the 270-day observation window. NaN if no such encounter falls within the observation window (see companion has_prior_* flag)."
+    },
+    {
+      "feature_name": "has_prior_potentially_avoidable_ed",
+      "category": "prior_ed_recency",
+      "source_dataset": "raw_ed_visits.csv",
+      "temporal_window": "270d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Explicit 0/1 flag: whether potentially avoidable ed has >=1 qualifying prior event within the 270-day observation window. Companion to the paired days_since_prior_* column's NaN representation."
+    },
+    {
+      "feature_name": "days_since_prior_protected_ed",
+      "category": "prior_ed_recency",
+      "source_dataset": "raw_ed_visits.csv",
+      "temporal_window": "270d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Days between the member's most recent an ED encounter classified PROTECTED_OR_HIGH_ACUITY strictly before index_date and index_date, capped by the 270-day observation window. NaN if no such encounter falls within the observation window (see companion has_prior_* flag)."
+    },
+    {
+      "feature_name": "has_prior_protected_ed",
+      "category": "prior_ed_recency",
+      "source_dataset": "raw_ed_visits.csv",
+      "temporal_window": "270d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Explicit 0/1 flag: whether protected ed has >=1 qualifying prior event within the 270-day observation window. Companion to the paired days_since_prior_* column's NaN representation."
+    },
+    {
+      "feature_name": "ed_utilization_velocity_30_over_180",
+      "category": "velocity",
+      "source_dataset": "derived (raw_ed_visits.csv)",
+      "temporal_window": "270d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Recent-vs-baseline utilization ratio. Formula: prior_ed_count_30d / max(prior_ed_count_180d, 1)."
+    },
+    {
+      "feature_name": "potentially_avoidable_ed_velocity_90_over_270",
+      "category": "velocity",
+      "source_dataset": "derived (raw_ed_visits.csv)",
+      "temporal_window": "270d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Recent-vs-baseline utilization ratio. Formula: prior_potentially_avoidable_ed_count_90d / max(prior_potentially_avoidable_ed_count_270d, 1)."
+    },
+    {
+      "feature_name": "prior_pcp_count_30d",
+      "category": "prior_care_utilization",
+      "source_dataset": "raw_care_history.csv",
+      "temporal_window": "30d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Count of prior Primary Care (PCP) care-history visits in the 30-day window strictly before index_date."
+    },
+    {
+      "feature_name": "prior_pcp_count_90d",
+      "category": "prior_care_utilization",
+      "source_dataset": "raw_care_history.csv",
+      "temporal_window": "90d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Count of prior Primary Care (PCP) care-history visits in the 90-day window strictly before index_date."
+    },
+    {
+      "feature_name": "prior_pcp_count_180d",
+      "category": "prior_care_utilization",
+      "source_dataset": "raw_care_history.csv",
+      "temporal_window": "180d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Count of prior Primary Care (PCP) care-history visits in the 180-day window strictly before index_date."
+    },
+    {
+      "feature_name": "prior_pcp_count_270d",
+      "category": "prior_care_utilization",
+      "source_dataset": "raw_care_history.csv",
+      "temporal_window": "270d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Count of prior Primary Care (PCP) care-history visits in the 270-day window strictly before index_date."
+    },
+    {
+      "feature_name": "days_since_prior_pcp",
+      "category": "prior_care_recency",
+      "source_dataset": "raw_care_history.csv",
+      "temporal_window": "270d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Days between the member's most recent Primary Care (PCP) visit strictly before index_date and index_date, capped by the 270-day observation window. NaN if none within the window (see companion has_prior_pcp flag)."
+    },
+    {
+      "feature_name": "has_prior_pcp",
+      "category": "prior_care_recency",
+      "source_dataset": "raw_care_history.csv",
+      "temporal_window": "270d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Explicit 0/1 flag: whether pcp has >=1 qualifying prior event within the 270-day observation window. Companion to the paired days_since_prior_* column's NaN representation."
+    },
+    {
+      "feature_name": "prior_urgent_care_count_30d",
+      "category": "prior_care_utilization",
+      "source_dataset": "raw_care_history.csv",
+      "temporal_window": "30d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Count of prior Urgent Care care-history visits in the 30-day window strictly before index_date."
+    },
+    {
+      "feature_name": "prior_urgent_care_count_90d",
+      "category": "prior_care_utilization",
+      "source_dataset": "raw_care_history.csv",
+      "temporal_window": "90d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Count of prior Urgent Care care-history visits in the 90-day window strictly before index_date."
+    },
+    {
+      "feature_name": "prior_urgent_care_count_180d",
+      "category": "prior_care_utilization",
+      "source_dataset": "raw_care_history.csv",
+      "temporal_window": "180d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Count of prior Urgent Care care-history visits in the 180-day window strictly before index_date."
+    },
+    {
+      "feature_name": "prior_urgent_care_count_270d",
+      "category": "prior_care_utilization",
+      "source_dataset": "raw_care_history.csv",
+      "temporal_window": "270d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Count of prior Urgent Care care-history visits in the 270-day window strictly before index_date."
+    },
+    {
+      "feature_name": "days_since_prior_urgent_care",
+      "category": "prior_care_recency",
+      "source_dataset": "raw_care_history.csv",
+      "temporal_window": "270d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Days between the member's most recent Urgent Care visit strictly before index_date and index_date, capped by the 270-day observation window. NaN if none within the window (see companion has_prior_urgent_care flag)."
+    },
+    {
+      "feature_name": "has_prior_urgent_care",
+      "category": "prior_care_recency",
+      "source_dataset": "raw_care_history.csv",
+      "temporal_window": "270d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Explicit 0/1 flag: whether urgent care has >=1 qualifying prior event within the 270-day observation window. Companion to the paired days_since_prior_* column's NaN representation."
+    },
+    {
+      "feature_name": "prior_telehealth_count_30d",
+      "category": "prior_care_utilization",
+      "source_dataset": "raw_care_history.csv",
+      "temporal_window": "30d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Count of prior Telehealth care-history visits in the 30-day window strictly before index_date."
+    },
+    {
+      "feature_name": "prior_telehealth_count_90d",
+      "category": "prior_care_utilization",
+      "source_dataset": "raw_care_history.csv",
+      "temporal_window": "90d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Count of prior Telehealth care-history visits in the 90-day window strictly before index_date."
+    },
+    {
+      "feature_name": "prior_telehealth_count_180d",
+      "category": "prior_care_utilization",
+      "source_dataset": "raw_care_history.csv",
+      "temporal_window": "180d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Count of prior Telehealth care-history visits in the 180-day window strictly before index_date."
+    },
+    {
+      "feature_name": "prior_telehealth_count_270d",
+      "category": "prior_care_utilization",
+      "source_dataset": "raw_care_history.csv",
+      "temporal_window": "270d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Count of prior Telehealth care-history visits in the 270-day window strictly before index_date."
+    },
+    {
+      "feature_name": "days_since_prior_telehealth",
+      "category": "prior_care_recency",
+      "source_dataset": "raw_care_history.csv",
+      "temporal_window": "270d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Days between the member's most recent Telehealth visit strictly before index_date and index_date, capped by the 270-day observation window. NaN if none within the window (see companion has_prior_telehealth flag)."
+    },
+    {
+      "feature_name": "has_prior_telehealth",
+      "category": "prior_care_recency",
+      "source_dataset": "raw_care_history.csv",
+      "temporal_window": "270d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Explicit 0/1 flag: whether telehealth has >=1 qualifying prior event within the 270-day observation window. Companion to the paired days_since_prior_* column's NaN representation."
+    },
+    {
+      "feature_name": "prior_care_management_count_30d",
+      "category": "prior_care_utilization",
+      "source_dataset": "raw_care_history.csv",
+      "temporal_window": "30d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Count of prior Care Management care-history visits in the 30-day window strictly before index_date."
+    },
+    {
+      "feature_name": "prior_care_management_count_90d",
+      "category": "prior_care_utilization",
+      "source_dataset": "raw_care_history.csv",
+      "temporal_window": "90d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Count of prior Care Management care-history visits in the 90-day window strictly before index_date."
+    },
+    {
+      "feature_name": "prior_care_management_count_180d",
+      "category": "prior_care_utilization",
+      "source_dataset": "raw_care_history.csv",
+      "temporal_window": "180d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Count of prior Care Management care-history visits in the 180-day window strictly before index_date."
+    },
+    {
+      "feature_name": "prior_care_management_count_270d",
+      "category": "prior_care_utilization",
+      "source_dataset": "raw_care_history.csv",
+      "temporal_window": "270d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Count of prior Care Management care-history visits in the 270-day window strictly before index_date."
+    },
+    {
+      "feature_name": "days_since_prior_care_management",
+      "category": "prior_care_recency",
+      "source_dataset": "raw_care_history.csv",
+      "temporal_window": "270d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Days between the member's most recent Care Management visit strictly before index_date and index_date, capped by the 270-day observation window. NaN if none within the window (see companion has_prior_care_management flag)."
+    },
+    {
+      "feature_name": "has_prior_care_management",
+      "category": "prior_care_recency",
+      "source_dataset": "raw_care_history.csv",
+      "temporal_window": "270d (observation, pre-index)",
+      "static_or_longitudinal": "longitudinal",
+      "model_candidate": true,
+      "leakage_status": "safe_historical_pre_index",
+      "description": "Explicit 0/1 flag: whether care management has >=1 qualifying prior event within the 270-day observation window. Companion to the paired days_since_prior_* column's NaN representation."
+    },
+    {
+      "feature_name": "future_potentially_avoidable_ed_90d",
+      "category": "target",
+      "source_dataset": "derived (raw_ed_visits.csv, outcome window)",
+      "temporal_window": "outcome (90d forward)",
+      "static_or_longitudinal": "n/a",
+      "model_candidate": false,
+      "leakage_status": "target_outcome_window",
+      "description": "1 if the member has >=1 POTENTIALLY_AVOIDABLE ED encounter in the 90-day outcome window after index_date, else 0."
+    }
+  ]
+}

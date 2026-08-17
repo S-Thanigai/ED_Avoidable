@@ -1,0 +1,7 @@
+candidate,calibration_method,roc_auc,pr_auc,brier_score,prevalence,pr_auc_no_skill_baseline,log_loss
+random_forest,uncalibrated,0.689716,0.317605,0.20009,0.1174,0.1174,0.593887
+random_forest,sigmoid,0.689058,0.317612,0.093889,0.1174,0.1174,0.328139
+random_forest,isotonic,0.689322,0.317205,0.093529,0.1174,0.1174,0.327485
+xgboost,uncalibrated,0.689284,0.319847,0.093464,0.1174,0.1174,0.327179
+xgboost,sigmoid,0.689854,0.31974,0.093832,0.1174,0.1174,0.328822
+xgboost,isotonic,0.689295,0.316375,0.09364,0.1174,0.1174,0.328028
