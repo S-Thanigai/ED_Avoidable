@@ -4,20 +4,35 @@ genai_explanation.py
 Phase 8C -- AGENT 4: GenAI Explanation Agent. NOT a decision-making agent.
 
 Responsibility: translate an ALREADY-COMPUTED, already-safety-reviewed
-UC07 decision summary into a short, plain-English explanation, using a
-locally hosted Ollama model (qwen3:8b by default). This agent has ZERO
-decision authority: it cannot change a risk probability, risk tier,
-navigation destination, or safety state -- it only receives those values
-after Agents 1-3 (and the Safety & Policy Agent, which is ALWAYS final)
-have already produced them, and it can never feed anything back into
-those agents. There is no import anywhere in this module of
-risk_detection.py, care_navigation.py, safety_policy.decide(), or
-orchestrator.py's decision-producing functions -- only
-safety_policy.check_text()/PROHIBITED_PHRASES and BASE_DISCLAIMER are
-reused, as a read-only policy/wording source, never as a way to call back
-into the decision pipeline. This is enforced BY CONSTRUCTION (no such
-import exists) and covered by dedicated regression tests
+UC07 decision summary into a short, plain-English explanation, using an
+LLM provider chain -- GroqCloud (primary, hosted, fast) falling back to a
+locally hosted Ollama model (qwen3:8b by default, secondary) falling back
+to a deterministic, template-based explanation (tertiary, always
+available). This agent has ZERO decision authority: it cannot change a
+risk probability, risk tier, navigation destination, or safety state --
+it only receives those values after Agents 1-3 (and the Safety & Policy
+Agent, which is ALWAYS final) have already produced them, and it can
+never feed anything back into those agents. There is no import anywhere
+in this module of risk_detection.py, care_navigation.py,
+safety_policy.decide(), or orchestrator.py's decision-producing functions
+-- only safety_policy.check_text()/PROHIBITED_PHRASES and BASE_DISCLAIMER
+are reused, as a read-only policy/wording source, never as a way to call
+back into the decision pipeline. This is enforced BY CONSTRUCTION (no
+such import exists) and covered by dedicated regression tests
 (tests/test_genai_explanation_authority.py) -- not merely asserted here.
+
+Provider chain (GENAI_PROVIDER="groq", the default): Groq is tried first
+(_call_groq); if it is unavailable (no API key configured, network error,
+timeout, non-2xx, or malformed/invalid structured output) OR its output
+is rejected by the SAME validation pipeline described below, the SAME
+request falls through to Ollama (_call_ollama); if that also fails or is
+rejected, it falls through to _deterministic_explanation. Every
+provider's raw output -- Groq or Ollama -- passes through the exact same
+_validate_genai_output() gate; no provider is trusted more than another,
+and neither has any code path back into the decision agents. Setting
+GENAI_PROVIDER="ollama" skips Groq entirely (Ollama primary, deterministic
+fallback only) -- this is the pre-Groq-integration behavior, preserved
+for callers who explicitly opt into it.
 
 Strict LLM input boundary (Phase 8C Part 5): this module NEVER receives
 or has access to raw CSV data, a member's full history, or any patient
@@ -73,10 +88,22 @@ APPLICATION CODE, not only by the system prompt below:
       read out of that response -- no internal reasoning field is ever
       surfaced to a caller
 Any rejection at any of these checks (or any network/timeout/HTTP/parse
-failure at all) falls through to `_deterministic_explanation`, which
-never raises and never depends on Ollama being installed, running, or
-reachable. `generate_explanation()` itself never raises for any reason --
-GenAI failure must never break the caller (Phase 8C Part 10).
+failure at all), for EITHER provider, falls through to the next provider
+in the chain and ultimately to `_deterministic_explanation`, which never
+raises and never depends on Groq or Ollama being installed, configured,
+running, or reachable. `generate_explanation()` itself never raises for
+any reason -- GenAI failure must never break the caller (Phase 8C Part
+10), and a missing/invalid GROQ_API_KEY is just one more "provider
+unavailable" case handled the same way as a network error.
+
+`generate_explanation()` accepts an optional `on_event` callback used
+ONLY for privacy-safe, caller-controlled diagnostics (see backend/main.py):
+it is invoked with short, fixed, enumerated event-name strings such as
+"groq_attempted" / "groq_succeeded" / "ollama_attempted" /
+"deterministic_fallback_used" -- never with payload contents, raw model
+output, or secrets. This module itself performs no logging or printing of
+any kind (see tests/test_genai_privacy.py); observability is the caller's
+choice and responsibility, not this module's.
 """
 from __future__ import annotations
 
@@ -85,6 +112,7 @@ import json
 import os
 import re
 import time
+from typing import Callable
 
 import httpx
 
@@ -94,6 +122,19 @@ from contracts import ExplanationSource, MemberExplanation
 DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434"
 DEFAULT_OLLAMA_MODEL = "qwen3:8b"
 DEFAULT_TIMEOUT_SECONDS = 20.0
+
+# Groq's OpenAI-compatible chat completions endpoint -- see
+# https://console.groq.com/docs/openai (base URL + auth) and
+# https://console.groq.com/docs/models (model catalog). GROQ_MODEL is
+# deliberately environment-configurable rather than hardcoded to a single
+# assumed-correct value: Groq's supported model lineup changes over time,
+# and only the operator (via backend/.env) can confirm which model id is
+# currently valid/enabled for their own account. DEFAULT_GROQ_MODEL is
+# just a reasonable out-of-the-box default, not a guarantee.
+DEFAULT_GROQ_BASE_URL = "https://api.groq.com/openai/v1"
+DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile"
+DEFAULT_GENAI_PROVIDER = "groq"
+_VALID_PROVIDERS = ("groq", "ollama")
 
 # Phase 8D: the model must ECHO these three structured fields verbatim from
 # its input -- exact-match validated against the authoritative decision
@@ -268,8 +309,25 @@ class GenAIConfig:
 
     def __init__(self) -> None:
         self.enabled = os.environ.get("GENAI_ENABLED", "false").strip().lower() == "true"
+
+        # Which provider is PRIMARY. "groq" (the default) tries Groq first,
+        # then falls back to Ollama; "ollama" skips Groq entirely and
+        # matches this module's pre-Groq-integration behavior exactly. Any
+        # other/unset value is treated as "groq" -- never as "disable
+        # everything", since GENAI_ENABLED already controls that.
+        raw_provider = os.environ.get("GENAI_PROVIDER", DEFAULT_GENAI_PROVIDER).strip().lower()
+        self.provider = raw_provider if raw_provider in _VALID_PROVIDERS else DEFAULT_GENAI_PROVIDER
+
         self.base_url = os.environ.get("OLLAMA_BASE_URL", DEFAULT_OLLAMA_BASE_URL).rstrip("/")
         self.model = os.environ.get("OLLAMA_MODEL", DEFAULT_OLLAMA_MODEL)
+
+        # Never logged, never echoed back in any response -- read once per
+        # request (see GenAIConfig's own docstring) so a key added to
+        # backend/.env is picked up without a server restart.
+        self.groq_api_key = os.environ.get("GROQ_API_KEY", "").strip()
+        self.groq_model = os.environ.get("GROQ_MODEL", "").strip() or DEFAULT_GROQ_MODEL
+        self.groq_base_url = os.environ.get("GROQ_BASE_URL", DEFAULT_GROQ_BASE_URL).rstrip("/")
+
         try:
             self.timeout_seconds = float(os.environ.get("GENAI_TIMEOUT_SECONDS", DEFAULT_TIMEOUT_SECONDS))
         except ValueError:
@@ -421,6 +479,76 @@ def _call_ollama(config: GenAIConfig, payload: dict) -> dict | None:
     except Exception:
         return None
     return parsed if isinstance(parsed, dict) else None
+
+
+def _groq_system_prompt() -> str:
+    """Same instructions as Ollama's system prompt, plus an explicit key
+    list -- Ollama's `format` request field enforces the JSON schema
+    server-side (see `_response_schema`), but Groq's `response_format:
+    json_object` mode only guarantees syntactically valid JSON, not any
+    particular shape, so the required keys are spelled out in-prompt too.
+    _validate_genai_output() is the real, application-controlled gate
+    either way; this is just a quality nudge, not a trust boundary."""
+    keys = _REQUIRED_ENUM_KEYS + _REQUIRED_TEXT_KEYS
+    key_list = ", ".join(f'"{k}"' for k in keys)
+    return (
+        _SYSTEM_PROMPT
+        + "\n\nRespond with ONLY a single raw JSON object (no markdown, no code "
+        + f"fences, no commentary) containing EXACTLY these string keys: {key_list}."
+    )
+
+
+_GROQ_SYSTEM_PROMPT = _groq_system_prompt()
+
+
+def _call_groq(config: GenAIConfig, payload: dict) -> dict | None:
+    """Mirrors `_call_ollama`'s contract exactly: returns the parsed JSON
+    object the model produced, or None on ANY failure (missing API key,
+    connection error, timeout, non-2xx, rate limit, malformed JSON, wrong
+    shape). Never raises. A missing/blank GROQ_API_KEY is treated as an
+    ordinary "provider unavailable" case -- no network call is even
+    attempted -- so a caller who never configured Groq falls straight
+    through to Ollama/deterministic exactly as before this integration."""
+    if not config.groq_api_key:
+        return None
+    body = {
+        "model": config.groq_model,
+        "messages": [
+            {"role": "system", "content": _GROQ_SYSTEM_PROMPT},
+            {"role": "user", "content": json.dumps(payload)},
+        ],
+        "response_format": {"type": "json_object"},
+        "temperature": 0.2,
+        "stream": False,
+    }
+    headers = {"Authorization": f"Bearer {config.groq_api_key}"}
+    try:
+        response = httpx.post(
+            f"{config.groq_base_url}/chat/completions",
+            json=body,
+            headers=headers,
+            timeout=config.timeout_seconds,
+        )
+        response.raise_for_status()
+        data = response.json()
+        content = data["choices"][0]["message"]["content"]
+        parsed = json.loads(content)
+    except Exception:
+        return None
+    return parsed if isinstance(parsed, dict) else None
+
+
+def _provider_chain(config: GenAIConfig) -> list[tuple[str, Callable[[GenAIConfig, dict], dict | None]]]:
+    """The ordered list of (provider_name, call_fn) pairs `generate_explanation`
+    tries in turn. GENAI_PROVIDER="ollama" skips Groq entirely (explicit
+    opt-out, e.g. no Groq account/key available); any other configured
+    value (including the default, "groq") tries Groq first, then Ollama --
+    Ollama is always available as the secondary fallback regardless of
+    `provider`, since it costs nothing to attempt and OLLAMA_BASE_URL/
+    OLLAMA_MODEL always have safe defaults even when unset."""
+    if config.provider == "ollama":
+        return [("OLLAMA", _call_ollama)]
+    return [("GROQ", _call_groq), ("OLLAMA", _call_ollama)]
 
 
 def _genai_prohibited_violation(text: str) -> bool:
@@ -593,25 +721,64 @@ def _validate_genai_output(raw: dict, payload: dict) -> MemberExplanation | None
     )
 
 
-def generate_explanation(payload: dict, config: GenAIConfig | None = None) -> MemberExplanation:
+def generate_explanation(
+    payload: dict,
+    config: GenAIConfig | None = None,
+    on_event: Callable[[str], None] | None = None,
+) -> MemberExplanation:
     """Top-level entry point. `payload` must already be the minimal,
     allow-listed structure validated by backend/main.py's ExplainRequest
     Pydantic model -- this function does not see raw CSVs or full member
-    history. Never raises; always returns a MemberExplanation, GenAI or
-    deterministic-fallback."""
+    history. Never raises; always returns a MemberExplanation, GenAI (from
+    whichever provider in `_provider_chain(config)` succeeds first) or
+    deterministic-fallback.
+
+    `on_event`, if given, is called with short fixed event-name strings
+    ("groq_attempted", "groq_succeeded", "groq_skipped_missing_api_key",
+    "groq_failed", "groq_rejected_by_validation", the "ollama_*"
+    equivalents, and "deterministic_fallback_used") so a caller (e.g.
+    backend/main.py) can log provider observability -- NEVER payload
+    contents, raw model output, or the API key -- without this module
+    doing any logging itself (see the module docstring and
+    tests/test_genai_privacy.py). A raising `on_event` can never break
+    explanation generation: it is itself wrapped in try/except."""
+
+    def _emit(event: str) -> None:
+        if on_event is None:
+            return
+        try:
+            on_event(event)
+        except Exception:
+            pass
+
     config = config or load_config()
     if not config.enabled:
         return _deterministic_explanation(payload)
 
-    start = time.monotonic()
     try:
-        raw = _call_ollama(config, payload)
-        if raw is None:
-            return _deterministic_explanation(payload)
-        result = _validate_genai_output(raw, payload)
-        if result is None:
-            return _deterministic_explanation(payload)
-        elapsed_ms = (time.monotonic() - start) * 1000
-        return dataclasses.replace(result, model_used=config.model, generation_time_ms=round(elapsed_ms, 1))
+        for provider_name, call_fn in _provider_chain(config):
+            if provider_name == "GROQ" and not config.groq_api_key:
+                _emit("groq_skipped_missing_api_key")
+                continue
+
+            start = time.monotonic()
+            _emit(f"{provider_name.lower()}_attempted")
+            raw = call_fn(config, payload)
+            if raw is None:
+                _emit(f"{provider_name.lower()}_failed")
+                continue
+
+            result = _validate_genai_output(raw, payload)
+            if result is None:
+                _emit(f"{provider_name.lower()}_rejected_by_validation")
+                continue
+
+            elapsed_ms = (time.monotonic() - start) * 1000
+            model_used = config.groq_model if provider_name == "GROQ" else config.model
+            _emit(f"{provider_name.lower()}_succeeded")
+            return dataclasses.replace(result, model_used=model_used, generation_time_ms=round(elapsed_ms, 1))
     except Exception:
-        return _deterministic_explanation(payload)
+        pass
+
+    _emit("deterministic_fallback_used")
+    return _deterministic_explanation(payload)
