@@ -24,13 +24,14 @@
   position: sticky;
   top: 0;
   z-index: 1;
-  background: var(--surface-card);
+  background: var(--surface-sunken);
   color: var(--text-secondary);
   font-size: 0.72rem;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
-  font-weight: 700;
+  letter-spacing: 0.04em;
+  font-weight: 800;
   padding: 0 14px;
+  border-bottom: 1px solid var(--border-strong);
 }
 
 .uc07-results-table__sort-button {
@@ -123,12 +124,20 @@
 
 .uc07-results-table__tier,
 .uc07-results-table__safety {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-weight: 700;
   font-size: 0.76rem;
   letter-spacing: 0.02em;
-  padding: 3px 9px;
+  padding: 4px 10px;
   border-radius: 999px;
+}
+
+.uc07-results-table__safety-icon {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
 }
 
 .uc07-results-table__tier--low {
@@ -156,6 +165,19 @@
   color: var(--safety-override);
   background: var(--safety-override-bg);
   font-weight: 800;
+}
+
+.uc07-results-table__nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.uc07-results-table__nav-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  flex-shrink: 0;
 }
 
 .uc07-results-table__prob {

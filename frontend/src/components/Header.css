@@ -7,10 +7,20 @@
   backdrop-filter: blur(8px);
 }
 
+/* Brand accent -- a slim gradient line, not a full-bleed gradient
+   header (clinical text always stays on a plain, high-contrast
+   surface). Sweeps navy -> blue -> teal, the app's full brand range. */
+.app-header::before {
+  content: "";
+  display: block;
+  height: 3px;
+  background: var(--gradient-header);
+}
+
 .app-header__inner {
   max-width: var(--content-max-width);
   margin: 0 auto;
-  padding: 14px var(--space-6);
+  padding: 13px var(--space-6);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -28,20 +38,29 @@
   width: 38px;
   height: 38px;
   border-radius: var(--radius-md);
-  background: var(--gradient-brand);
+  background: var(--gradient-header);
   color: var(--text-on-accent);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
-  font-size: 0.8rem;
-  letter-spacing: 0.02em;
   flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(24, 104, 201, 0.35);
 }
 
-.app-header__title {
+.app-header__mark svg {
+  width: 20px;
+  height: 20px;
+}
+
+.app-header__identity {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.app-header__wordmark {
   font-size: 1.05rem;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text-primary);
   letter-spacing: -0.01em;
   white-space: nowrap;
@@ -49,13 +68,65 @@
   text-overflow: ellipsis;
 }
 
-.app-header__subtitle {
-  margin-top: 1px;
-  font-size: 0.78rem;
+.app-header__wordmark-accent {
+  font-weight: 600;
   color: var(--text-secondary);
+}
+
+.app-header__tagline {
+  margin-top: 1px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--accent);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.app-header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+
+.app-header__status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+}
+
+.app-header__status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.app-header__status--online .app-header__status-dot {
+  background: var(--status-good);
+  box-shadow: 0 0 0 3px var(--status-good-bg);
+}
+.app-header__status--online {
+  color: var(--status-good);
+}
+
+.app-header__status--unavailable .app-header__status-dot {
+  background: var(--status-critical);
+  box-shadow: 0 0 0 3px var(--status-critical-bg);
+}
+.app-header__status--unavailable {
+  color: var(--status-critical);
 }
 
 .theme-toggle {
@@ -89,8 +160,17 @@
   outline-offset: 2px;
 }
 
+@media (max-width: 640px) {
+  .app-header__status-label {
+    display: none;
+  }
+  .app-header__status {
+    padding: 6px;
+  }
+}
+
 @media (max-width: 560px) {
-  .app-header__subtitle {
+  .app-header__tagline {
     display: none;
   }
   .theme-toggle span {

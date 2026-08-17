@@ -46,7 +46,7 @@ describe("Uc07DecisionPanel -- navigation destination rendering", () => {
 
   it("renders NO_PROACTIVE_NAVIGATION", () => {
     render(<Uc07DecisionPanel decision={makeDecision({ navigation: { destination: "NO_PROACTIVE_NAVIGATION" } })} />);
-    expect(screen.getByText("No proactive navigation recommended")).toBeInTheDocument();
+    expect(screen.getByText("No proactive navigation")).toBeInTheDocument();
   });
 });
 

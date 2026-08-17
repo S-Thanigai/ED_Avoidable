@@ -87,6 +87,16 @@ describe("MemberDetailsDrawer (member workspace)", () => {
     expect(screen.getByRole("region", { name: "Current safety context" })).toBeInTheDocument();
   });
 
+  it("switches to the Communication tab and exposes report/email actions there (not in the header)", async () => {
+    const user = userEvent.setup();
+    renderDrawer();
+    expect(screen.queryByRole("button", { name: "Download Report" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: "Communication" }));
+    expect(screen.getByRole("heading", { name: "Member Communication" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Download Report" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Email Member" })).toBeInTheDocument();
+  });
+
   it("shows the strongest-priority OVERRIDE banner regardless of which tab is active", async () => {
     const user = userEvent.setup();
     renderDrawer({ safety: { state: "OVERRIDE", override: true }, navigation: { destination: null, reason_codes: [], explanation: "x" } });

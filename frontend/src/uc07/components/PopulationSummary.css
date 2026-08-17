@@ -28,19 +28,58 @@
 
 .population-summary__kpis {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: var(--space-3);
 }
 
 .population-summary__kpi {
+  position: relative;
   background: var(--surface-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: var(--space-4);
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.population-summary__kpi:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* A thin category-colored top edge -- every tile carries its own
+   identity even before reading the number, without becoming a full
+   rainbow card. */
+.population-summary__kpi::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--kpi-accent, var(--accent));
+}
+
+.population-summary__kpi-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--kpi-accent, var(--accent));
+  background: var(--kpi-accent-bg, var(--accent-bg));
+  margin-bottom: 4px;
+}
+.population-summary__kpi-icon svg {
+  width: 16px;
+  height: 16px;
 }
 
 .population-summary__kpi-value {
@@ -62,11 +101,23 @@
   color: var(--text-muted);
 }
 
+.population-summary__kpi--warning {
+  --kpi-accent: var(--status-warning);
+  --kpi-accent-bg: var(--status-warning-bg);
+}
+
+.population-summary__kpi--teal {
+  --kpi-accent: var(--teal);
+  --kpi-accent-bg: var(--teal-bg);
+}
+
 /* The Override KPI is the one number on this dashboard that must never
    read as "just another metric" -- safety has final authority in the
    underlying system, so its card carries the strongest visual weight
    whenever the count is non-zero. */
 .population-summary__kpi--critical {
+  --kpi-accent: var(--safety-override);
+  --kpi-accent-bg: var(--safety-override-bg);
   border-color: color-mix(in srgb, var(--safety-override) 45%, var(--border));
   background: linear-gradient(180deg, var(--safety-override-bg), var(--surface-card) 70%);
 }

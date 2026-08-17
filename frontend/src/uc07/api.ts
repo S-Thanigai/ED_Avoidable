@@ -8,11 +8,15 @@ import { API_BASE_URL } from "../apiConfig";
 import type {
   CurrentSafetyContextPayload,
   DecideUC07Params,
+  EmailSendRequestPayload,
+  EmailSendResponse,
   ExplainRequest,
   FinalUC07Decision,
   HealthResponse,
   MemberExplanationResponse,
   ModelInfoResponse,
+  ReportMemberInput,
+  ReportRequestPayload,
   UC07DecideResponse,
 } from "./types";
 
@@ -133,6 +137,121 @@ export async function getModelInfo(): Promise<ModelInfoResponse> {
 
 export async function getHealth(): Promise<HealthResponse> {
   return requestJson<HealthResponse>("/health", { method: "GET" });
+}
+
+// ---------------------------------------------------------------------------
+// Phase 9 -- Member Communication & Reporting: PDF report + email.
+// Same "build the request FROM an already-fetched decision" pattern as
+// buildExplainRequest above -- computes nothing, never sends anything
+// not already visible in this decision plus the member contact fields
+// the caller supplies.
+// ---------------------------------------------------------------------------
+
+/** Builds the shared POST /uc07/report + POST /uc07/email request body
+ * from an already-fetched FinalUC07Decision, member contact/profile
+ * fields (see memberContacts.ts -- email/name are NEVER part of the
+ * decision itself), and an optional already-fetched explanation (see
+ * explanationCache.ts). If `explanation` is omitted, the backend renders
+ * the report with its own deterministic fallback text -- this function
+ * never fetches or waits on one. */
+export function buildReportRequest(
+  decision: FinalUC07Decision,
+  member: { name?: string | null; email?: string | null; age?: number | null; gender?: string | null },
+  explanation?: MemberExplanationResponse | null,
+): ReportRequestPayload {
+  const memberInput: ReportMemberInput = {
+    member_id: decision.member_id,
+    name: member.name ?? null,
+    email: member.email ?? null,
+    age: member.age ?? null,
+    gender: member.gender ?? null,
+  };
+  return {
+    member: memberInput,
+    risk: {
+      probability: decision.risk.probability,
+      tier: decision.risk.tier,
+      model_version: decision.risk.model_version,
+      factors: decision.risk.explanation_factors.map((f) => ({
+        display_name: f.display_name,
+        direction: f.direction,
+      })),
+    },
+    navigation: {
+      destination: decision.navigation.destination,
+      reason_codes: decision.navigation.reason_codes,
+    },
+    safety: {
+      state: decision.safety.state,
+      context_completeness: decision.safety.context_completeness,
+      context_source: decision.safety.context_source,
+      message: decision.safety.message,
+    },
+    synthetic_model: decision.risk.synthetic_model,
+    dataset_id: decision.risk.dataset_id,
+    explanation: explanation
+      ? {
+          summary: explanation.summary,
+          risk_explanation: explanation.risk_explanation,
+          navigation_explanation: explanation.navigation_explanation,
+          safety_explanation: explanation.safety_explanation,
+          disclaimer: explanation.disclaimer,
+          explanation_source: explanation.explanation_source,
+          model_used: explanation.model_used,
+        }
+      : null,
+  };
+}
+
+function safeFilenameFromContentDisposition(header: string | null, fallback: string): string {
+  if (!header) return fallback;
+  const match = /filename="?([^";]+)"?/i.exec(header);
+  return match?.[1] ?? fallback;
+}
+
+/** POSTs a ReportRequestPayload and returns the rendered PDF as a Blob
+ * plus the filename the backend chose (Content-Disposition), for both
+ * "Download PDF Report" and the email composer's "Preview PDF" action. */
+export async function fetchMemberReportPdf(
+  request: ReportRequestPayload,
+): Promise<{ blob: Blob; filename: string }> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/uc07/report`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    });
+  } catch {
+    throw new UC07ApiError(
+      `Could not reach the UC07 decision service at ${API_BASE_URL}. Is the backend running?`,
+      null,
+    );
+  }
+  if (!response.ok) {
+    const detail = await parseErrorDetail(response, `Report generation failed (HTTP ${response.status}).`);
+    throw new UC07ApiError(detail, response.status);
+  }
+  const blob = await response.blob();
+  const filename = safeFilenameFromContentDisposition(
+    response.headers.get("content-disposition"),
+    `Member_Care_Navigation_Report_${request.member.member_id}.pdf`,
+  );
+  return { blob, filename };
+}
+
+/** Sends the SAME report (built the same way as fetchMemberReportPdf's
+ * request) as an email attachment. Always resolves -- a disabled/
+ * misconfigured/unreachable email provider comes back as
+ * `{ sent: false, error_code, message }`, never a thrown UC07ApiError,
+ * matching the backend's "never surface a business failure as an HTTP
+ * error" convention (same as explainMember). */
+export async function sendMemberReportEmail(request: EmailSendRequestPayload): Promise<EmailSendResponse> {
+  return requestJson<EmailSendResponse>("/uc07/email", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
 }
 
 /** Builds the current_safety_context payload for a single member from
