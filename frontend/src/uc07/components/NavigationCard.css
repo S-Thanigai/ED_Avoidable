@@ -52,16 +52,16 @@
 }
 
 .navigation-card__suppressed {
-  border: 1px dashed var(--status-critical);
+  border: 1px dashed var(--safety-override);
   border-radius: var(--radius-sm);
   padding: 12px 14px;
-  background: var(--status-critical-bg);
+  background: var(--safety-override-bg);
 }
 
 .navigation-card__suppressed-badge {
   display: inline-block;
   font-weight: 700;
-  color: var(--status-critical);
+  color: var(--safety-override);
   font-size: 0.9rem;
 }
 

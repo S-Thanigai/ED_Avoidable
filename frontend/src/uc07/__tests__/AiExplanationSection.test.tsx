@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import { AiExplanationSection } from "../components/AiExplanationSection";
 import { makeDecision } from "./fixtures";
+import { clearExplanationCache } from "../explanationCache";
 import type { MemberExplanationResponse } from "../types";
 
 vi.mock("../api", async () => {
@@ -30,6 +31,7 @@ const FALLBACK_RESPONSE: MemberExplanationResponse = {
 describe("AiExplanationSection", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    clearExplanationCache();
   });
 
   it("shows a loading state while the explanation is being generated", async () => {
@@ -47,7 +49,7 @@ describe("AiExplanationSection", () => {
     render(<AiExplanationSection decision={decision} />);
 
     expect(await screen.findByText(GENAI_RESPONSE.summary)).toBeInTheDocument();
-    expect(screen.getByText(/Source: AI-generated explanation using Qwen3 8B/)).toBeInTheDocument();
+    expect(screen.getByText(/AI-generated explanation using Qwen3 8B/)).toBeInTheDocument();
   });
 
   it("renders the deterministic fallback and labels its source distinctly, not implying AI generation", async () => {
@@ -57,7 +59,7 @@ describe("AiExplanationSection", () => {
     render(<AiExplanationSection decision={decision} />);
 
     expect(await screen.findByText(FALLBACK_RESPONSE.summary)).toBeInTheDocument();
-    expect(screen.getByText("Explanation source: Deterministic system explanation.")).toBeInTheDocument();
+    expect(screen.getByText(/Deterministic fallback explanation/)).toBeInTheDocument();
     expect(screen.queryByText(/AI-generated/)).not.toBeInTheDocument();
   });
 
@@ -103,5 +105,93 @@ describe("AiExplanationSection", () => {
     const text = document.body.textContent ?? "";
     expect(text).not.toContain("{");
     expect(text).not.toContain("generation_time_ms");
+  });
+
+  describe("session cache (Part 2)", () => {
+    it("close member -> reopen the SAME member/decision -> no second /uc07/explain call, cached text shown instantly", async () => {
+      const { explainMember } = await import("../api");
+      vi.mocked(explainMember).mockResolvedValue(GENAI_RESPONSE);
+      const decision = makeDecision({ member_id: "M00001" });
+
+      const first = render(<AiExplanationSection decision={decision} />);
+      expect(await screen.findByText(GENAI_RESPONSE.summary)).toBeInTheDocument();
+      expect(explainMember).toHaveBeenCalledTimes(1);
+      first.unmount(); // simulates closing the member / switching tabs away
+
+      // Reopen the exact same decision -- a brand-new component instance,
+      // same as what happens when the drawer is reopened for this member.
+      render(<AiExplanationSection decision={decision} />);
+      // No loading flash: the cached explanation renders synchronously.
+      expect(screen.queryByText(/generating explanation/i)).not.toBeInTheDocument();
+      expect(screen.getByText(GENAI_RESPONSE.summary)).toBeInTheDocument();
+      expect(explainMember).toHaveBeenCalledTimes(1); // still just one real call
+    });
+
+    it("shows a 'previously generated this session' note only when served from cache", async () => {
+      const { explainMember } = await import("../api");
+      vi.mocked(explainMember).mockResolvedValue(GENAI_RESPONSE);
+      const decision = makeDecision({ member_id: "M00001" });
+
+      const first = render(<AiExplanationSection decision={decision} />);
+      await screen.findByText(GENAI_RESPONSE.summary);
+      expect(screen.queryByText(/previously generated this session/i)).not.toBeInTheDocument();
+      first.unmount();
+
+      render(<AiExplanationSection decision={decision} />);
+      expect(screen.getByText(/previously generated this session/i)).toBeInTheDocument();
+    });
+
+    it("invalidates the cache when the safety state changes (CAUTION -> OVERRIDE), fetching a fresh explanation", async () => {
+      const { explainMember } = await import("../api");
+      const cautionDecision = makeDecision({ member_id: "M00001", safety: { state: "CAUTION" } });
+      const overrideResponse: MemberExplanationResponse = { ...GENAI_RESPONSE, summary: "Override summary." };
+      vi.mocked(explainMember).mockResolvedValueOnce(GENAI_RESPONSE).mockResolvedValueOnce(overrideResponse);
+
+      const first = render(<AiExplanationSection decision={cautionDecision} />);
+      await screen.findByText(GENAI_RESPONSE.summary);
+      first.unmount();
+
+      const overrideDecision = makeDecision({
+        member_id: "M00001",
+        safety: { state: "OVERRIDE", override: true, context_completeness: "COMPLETE", context_source: "CALLER_SUPPLIED" },
+        navigation: { destination: null, reason_codes: [], explanation: "x" },
+      });
+      render(<AiExplanationSection decision={overrideDecision} />);
+      // A DIFFERENT decision must never show the old cached text as if it
+      // described the new one -- it must re-fetch.
+      expect(screen.queryByText(GENAI_RESPONSE.summary)).not.toBeInTheDocument();
+      expect(await screen.findByText(overrideResponse.summary)).toBeInTheDocument();
+      expect(explainMember).toHaveBeenCalledTimes(2);
+    });
+
+    it("invalidates the cache when the risk tier changes after a fresh analysis run", async () => {
+      const { explainMember } = await import("../api");
+      const lowDecision = makeDecision({ member_id: "M00001", risk: { tier: "LOW", probability: 0.03 } });
+      const highResponse: MemberExplanationResponse = { ...GENAI_RESPONSE, summary: "High risk summary." };
+      vi.mocked(explainMember).mockResolvedValueOnce(GENAI_RESPONSE).mockResolvedValueOnce(highResponse);
+
+      const first = render(<AiExplanationSection decision={lowDecision} />);
+      await screen.findByText(GENAI_RESPONSE.summary);
+      first.unmount();
+
+      const highDecision = makeDecision({ member_id: "M00001", risk: { tier: "HIGH", probability: 0.41 } });
+      render(<AiExplanationSection decision={highDecision} />);
+      expect(await screen.findByText(highResponse.summary)).toBeInTheDocument();
+      expect(explainMember).toHaveBeenCalledTimes(2);
+    });
+
+    it("does not cache a failed request -- a later attempt for the same decision retries", async () => {
+      const { explainMember, UC07ApiError } = await import("../api");
+      vi.mocked(explainMember).mockRejectedValueOnce(new UC07ApiError("timeout", null)).mockResolvedValueOnce(GENAI_RESPONSE);
+      const decision = makeDecision({ member_id: "M00001" });
+
+      const first = render(<AiExplanationSection decision={decision} />);
+      await screen.findByRole("alert");
+      first.unmount();
+
+      render(<AiExplanationSection decision={decision} />);
+      expect(await screen.findByText(GENAI_RESPONSE.summary)).toBeInTheDocument();
+      expect(explainMember).toHaveBeenCalledTimes(2);
+    });
   });
 });

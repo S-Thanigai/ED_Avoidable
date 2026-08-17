@@ -12,6 +12,15 @@ const STATE_LABEL: Record<FinalUC07Decision["safety"]["state"], string> = {
   OVERRIDE: "Override",
 };
 
+// Concise, non-clinical outcome descriptions (Section 16). CLEAR never
+// implies "clinically cleared" -- it describes only what current
+// information was supplied and whether a configured rule fired.
+const STATE_DESCRIPTION: Record<FinalUC07Decision["safety"]["state"], string> = {
+  CLEAR: "Complete current context with no override indicator.",
+  CAUTION: "Current context is missing or incomplete.",
+  OVERRIDE: "Current information contains an emergency/high-acuity indicator.",
+};
+
 function yesNoUnknown(value: 0 | 1 | undefined): string {
   if (value === undefined) return "Unknown";
   return value === 1 ? "Yes" : "No";
@@ -79,6 +88,20 @@ export function CurrentSafetyContextSection({
         </div>
         <ContextStatus completeness={safety.context_completeness} source={safety.context_source} />
       </div>
+
+      <dl className="current-safety-context__legend" aria-label="Possible safety outcomes">
+        {(["CLEAR", "CAUTION", "OVERRIDE"] as const).map((state) => (
+          <div
+            key={state}
+            className={`current-safety-context__legend-row${state === safety.state ? " current-safety-context__legend-row--active" : ""}`}
+          >
+            <dt className={`current-safety-context__legend-term current-safety-context__legend-term--${state.toLowerCase()}`}>
+              {STATE_LABEL[state]}
+            </dt>
+            <dd>{STATE_DESCRIPTION[state]}</dd>
+          </div>
+        ))}
+      </dl>
 
       {submitted && (
         <dl className="current-safety-context__fields">

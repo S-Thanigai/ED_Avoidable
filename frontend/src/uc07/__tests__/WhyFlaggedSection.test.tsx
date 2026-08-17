@@ -18,7 +18,7 @@ describe("WhyFlaggedSection", () => {
     expect(screen.getByText("Telehealth availability")).toBeInTheDocument();
   });
 
-  it("shows an understandable direction indicator, not just a raw sign", () => {
+  it("groups factors into clearly labeled Increased/Decreased sections with a diverging bar per factor", () => {
     const decision = makeDecision({
       risk: {
         explanation_factors: [
@@ -28,18 +28,22 @@ describe("WhyFlaggedSection", () => {
       },
     });
     render(<WhyFlaggedSection risk={decision.risk} />);
-    expect(screen.getByText("increased the model's estimate")).toBeInTheDocument();
-    expect(screen.getByText("decreased the model's estimate")).toBeInTheDocument();
+    expect(screen.getByText("Increased estimate")).toBeInTheDocument();
+    expect(screen.getByText("Decreased estimate")).toBeInTheDocument();
+    expect(document.querySelectorAll(".why-flagged__row-bar--up")).toHaveLength(1);
+    expect(document.querySelectorAll(".why-flagged__row-bar--down")).toHaveLength(1);
+    expect(screen.getByText("+0.200")).toBeInTheDocument();
+    expect(screen.getByText("−0.100")).toBeInTheDocument();
   });
 
   it("shows the explanation method, correctly reflecting SHAP vs linear contribution", () => {
     const shapDecision = makeDecision({ risk: { explanation_method: "SHAP_LINEAR" } });
-    const { rerender } = render(<WhyFlaggedSection risk={shapDecision.risk} />);
-    expect(screen.getByText(/Explanation method: SHAP/)).toBeInTheDocument();
+    const { rerender, container } = render(<WhyFlaggedSection risk={shapDecision.risk} />);
+    expect(container.querySelector(".why-flagged__method")?.textContent).toMatch(/Explanation method: SHAP/);
 
     const linearDecision = makeDecision({ risk: { explanation_method: "LINEAR_CONTRIBUTION" } });
     rerender(<WhyFlaggedSection risk={linearDecision.risk} />);
-    expect(screen.getByText(/Explanation method: Logistic regression/)).toBeInTheDocument();
+    expect(container.querySelector(".why-flagged__method")?.textContent).toMatch(/Explanation method: Logistic regression/);
   });
 
   it("never uses causal language", () => {

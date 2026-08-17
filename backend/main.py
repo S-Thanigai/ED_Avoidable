@@ -25,6 +25,23 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Literal
 
+from dotenv import load_dotenv
+
+# Load backend/.env (if present) into the process environment BEFORE
+# anything below reads os.environ -- this is what lets GENAI_ENABLED/
+# OLLAMA_BASE_URL/OLLAMA_MODEL/GENAI_TIMEOUT_SECONDS/CORS_ORIGINS be set
+# once in a local file instead of re-exporting them in every shell
+# session. Uses an explicit path (not the CWD-relative default
+# load_dotenv() would use) so `uvicorn main:app` works the same whether
+# it's launched from backend/ or the repo root. override=False (the
+# default) means a variable already set in the real environment always
+# wins over the .env file -- this is deliberate: it keeps `monkeypatch.
+# setenv(...)` in tests, and any real deployment env var, authoritative
+# over a local .env. backend/.env is untracked (see .gitignore) and never
+# committed -- backend/.env.example documents the expected keys with
+# safe, non-secret example values.
+load_dotenv(Path(__file__).resolve().parent / ".env")
+
 import numpy as np
 import pandas as pd
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
@@ -163,7 +180,7 @@ app = FastAPI(
 # defaults to the two local Vite dev server addresses so `npm run dev`
 # keeps working out of the box with no configuration required. No Azure
 # URL is hard-coded here -- Phase 9 sets CORS_ORIGINS at deploy time.
-_DEFAULT_CORS_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173"
+_DEFAULT_CORS_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:5175,http://127.0.0.1:5175"
 CORS_ORIGINS = [
     origin.strip()
     for origin in os.environ.get("CORS_ORIGINS", _DEFAULT_CORS_ORIGINS).split(",")
@@ -501,17 +518,87 @@ async def predict_json_endpoint(
 
 
 @app.post(
+    "/predict-demo",
+    summary="Run ED risk prediction on local demo CSVs",
+    tags=["Prediction"],
+)
+async def predict_demo_endpoint():
+    members_path = BASE_DIR / "raw_members.csv"
+    ed_visits_path = BASE_DIR / "raw_ed_visits.csv"
+    care_path = BASE_DIR / "raw_care_history.csv"
+
+    if not (members_path.exists() and ed_visits_path.exists() and care_path.exists()):
+        raise HTTPException(
+            status_code=404,
+            detail="Demo data CSV files not found in the repository."
+        )
+
+    if not MODEL_PATH.exists():
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                f"Model file not found at '{MODEL_PATH}'. "
+                "Please run train_model.py first to generate ed_risk_model.pkl."
+            ),
+        )
+
+    try:
+        members_df = pd.read_csv(members_path)
+        ed_visits_df = pd.read_csv(ed_visits_path)
+        care_df = pd.read_csv(care_path)
+        X, member_ids = extract_features(members_df, ed_visits_df, care_df)
+        result_df = predict(X, member_ids, members_df, ed_visits_df, care_df, include_shap=False)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Demo prediction failed: {exc}",
+        ) from exc
+
+    json_safe_df = result_df.replace([np.inf, -np.inf], np.nan).astype(object)
+    json_safe_df = json_safe_df.where(pd.notnull(json_safe_df), None)
+
+    return JSONResponse(
+        {
+            "columns": result_df.columns.tolist(),
+            "rows": json_safe_df.to_dict(orient="records"),
+            "count": len(result_df),
+        }
+    )
+
+
+@app.post(
     "/explain-member",
     summary="Compute the SHAP explanation for one member on demand",
     tags=["Prediction"],
 )
 async def explain_member_endpoint(
     member_id: str = Form(...),
-    members_file: UploadFile = File(..., description="raw_members.csv (or similar unseen data)"),
-    ed_visits_file: UploadFile = File(..., description="raw_ed_visits.csv (or similar unseen data)"),
-    care_file: UploadFile = File(..., description="raw_care_history.csv (or similar unseen data)"),
+    members_file: UploadFile = File(None, description="raw_members.csv (or similar unseen data)"),
+    ed_visits_file: UploadFile = File(None, description="raw_ed_visits.csv (or similar unseen data)"),
+    care_file: UploadFile = File(None, description="raw_care_history.csv (or similar unseen data)"),
 ):
-    X, member_ids, *_ = await _extract_all(members_file, ed_visits_file, care_file)
+    if members_file is None or ed_visits_file is None or care_file is None:
+        # Fallback to local files
+        members_path = BASE_DIR / "raw_members.csv"
+        ed_visits_path = BASE_DIR / "raw_ed_visits.csv"
+        care_path = BASE_DIR / "raw_care_history.csv"
+        if not (members_path.exists() and ed_visits_path.exists() and care_path.exists()):
+            raise HTTPException(
+                status_code=400,
+                detail="Uploaded files are required because local demo files are missing."
+            )
+        try:
+            members_df = pd.read_csv(members_path)
+            ed_visits_df = pd.read_csv(ed_visits_path)
+            care_df = pd.read_csv(care_path)
+            X, member_ids = extract_features(members_df, ed_visits_df, care_df)
+        except Exception as exc:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Feature engineering failed on demo data: {exc}",
+            ) from exc
+    else:
+        X, member_ids, *_ = await _extract_all(members_file, ed_visits_file, care_file)
 
     try:
         # Phase 8D: same offload as /predict above, applied for

@@ -1,42 +1,101 @@
-import { describe, expect, it } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { PopulationSummary } from "../components/PopulationSummary";
 import { makeDecision } from "./fixtures";
+import { DEFAULT_FILTERS, type MemberFiltersState } from "../tableState";
+
+function renderSummary(decisions: ReturnType<typeof makeDecision>[], filters: MemberFiltersState = DEFAULT_FILTERS) {
+  const onFilterChange = vi.fn();
+  const utils = render(<PopulationSummary decisions={decisions} filters={filters} onFilterChange={onFilterChange} />);
+  return { ...utils, onFilterChange };
+}
 
 describe("PopulationSummary", () => {
-  it("tallies tier/navigation/safety counts from the decisions array, not a hardcoded/stale value", () => {
+  it("tallies KPI counts from the decisions array, not a hardcoded/stale value", () => {
     const decisions = [
-      makeDecision({ member_id: "M1", risk: { tier: "LOW" }, navigation: { destination: "PRIMARY_CARE", reason_codes: [], explanation: "x" }, safety: { state: "CLEAR", context_completeness: "COMPLETE", context_source: "CALLER_SUPPLIED" } }),
-      makeDecision({ member_id: "M2", risk: { tier: "HIGH" }, navigation: { destination: "CARE_MANAGEMENT", reason_codes: [], explanation: "x" }, safety: { state: "OVERRIDE", override: true } }),
-      makeDecision({ member_id: "M3", risk: { tier: "HIGH" }, navigation: { destination: "CARE_MANAGEMENT", reason_codes: [], explanation: "x" }, safety: { state: "CAUTION" } }),
+      makeDecision({ member_id: "M1", risk: { tier: "LOW" }, safety: { state: "CLEAR", context_completeness: "COMPLETE", context_source: "CALLER_SUPPLIED" } }),
+      makeDecision({ member_id: "M2", risk: { tier: "HIGH" }, safety: { state: "OVERRIDE", override: true } }),
+      makeDecision({ member_id: "M3", risk: { tier: "HIGH" }, safety: { state: "CAUTION" } }),
     ];
-    render(<PopulationSummary decisions={decisions} totalCount={3} filtersActive={false} />);
+    renderSummary(decisions);
 
-    const riskCard = screen.getByText("Risk distribution").closest(".population-summary__card")!;
-    expect(Array.from(riskCard.querySelectorAll("dd")).map((el) => el.textContent)).toEqual(["1", "0", "2"]); // Low/Moderate/High
-
-    const navCard = screen.getByText("Navigation").closest(".population-summary__card")!;
-    // NO_PROACTIVE_NAVIGATION, Primary Care, Urgent Care, Telehealth, Care Management
-    expect(Array.from(navCard.querySelectorAll("dd")).map((el) => el.textContent)).toEqual(["0", "1", "0", "0", "2"]);
-
-    const safetyCard = screen.getByText("Safety").closest(".population-summary__card")!;
-    expect(Array.from(safetyCard.querySelectorAll("dd")).map((el) => el.textContent)).toEqual(["1", "1", "1"]); // Clear/Caution/Override
-  });
-
-  it("shows total-vs-filtered wording only when filters are active", () => {
-    const decisions = [makeDecision({ member_id: "M1" })];
-    const { rerender } = render(<PopulationSummary decisions={decisions} totalCount={5} filtersActive={false} />);
-    expect(screen.getByText("5")).toBeInTheDocument();
-    expect(screen.queryByText(/filters active/i)).not.toBeInTheDocument();
-
-    rerender(<PopulationSummary decisions={decisions} totalCount={5} filtersActive={true} />);
-    const caveat = screen.getByText(/filters active/i).closest(".population-summary__caveat") as HTMLElement;
-    expect(within(caveat).getByText("1")).toBeInTheDocument(); // filtered count
-    expect(within(caveat).getByText("5")).toBeInTheDocument(); // total count
+    expect(screen.getByText("3", { selector: ".population-summary__kpi-value" })).toBeInTheDocument();
+    const kpis = screen.getAllByText(/^\d+$/, { selector: ".population-summary__kpi-value" }).map((el) => el.textContent);
+    expect(kpis).toEqual(["3", "2", "1"]); // Total / High Risk / Override
   });
 
   it("never claims a clinical outcome or diagnosis", () => {
-    render(<PopulationSummary decisions={[]} totalCount={0} filtersActive={false} />);
+    renderSummary([]);
     expect(screen.getByText(/not a clinical outcome or/i)).toBeInTheDocument();
+  });
+
+  it("does not crash on a zero-member population and shows an empty state per chart", () => {
+    renderSummary([]);
+    expect(screen.getAllByText(/No members in the current population/).length).toBeGreaterThan(0);
+  });
+
+  it("does not crash when 100% of members share one category (e.g. all CAUTION)", () => {
+    const decisions = Array.from({ length: 5 }, (_, i) => makeDecision({ member_id: `M${i}`, safety: { state: "CAUTION" } }));
+    renderSummary(decisions);
+    expect(screen.getByRole("button", { name: /Caution: 5 members \(100%\)/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Clear: 0 members \(0%\)/ })).toBeInTheDocument();
+  });
+
+  it("clicking the HIGH risk donut segment sets the tier filter (Part 27 test 4)", async () => {
+    const user = userEvent.setup();
+    const decisions = [makeDecision({ member_id: "M1", risk: { tier: "LOW" } }), makeDecision({ member_id: "M2", risk: { tier: "HIGH" } })];
+    const { onFilterChange } = renderSummary(decisions);
+
+    await user.click(screen.getByRole("button", { name: /^High: 1 members/ }));
+    expect(onFilterChange).toHaveBeenCalledWith({ ...DEFAULT_FILTERS, tier: "HIGH" });
+  });
+
+  it("clicking an already-active segment clears that filter (toggle off)", async () => {
+    const user = userEvent.setup();
+    const decisions = [makeDecision({ member_id: "M1", risk: { tier: "HIGH" } })];
+    const { onFilterChange } = renderSummary(decisions, { ...DEFAULT_FILTERS, tier: "HIGH" });
+
+    await user.click(screen.getByRole("button", { name: /^High: 1 members.*filter active/ }));
+    expect(onFilterChange).toHaveBeenCalledWith({ ...DEFAULT_FILTERS, tier: "ALL" });
+  });
+
+  it("clicking a navigation bar segment sets the navigation filter (Part 27 test 5)", async () => {
+    const user = userEvent.setup();
+    const decisions = [
+      makeDecision({ member_id: "M1", navigation: { destination: "CARE_MANAGEMENT", reason_codes: [], explanation: "x" } }),
+    ];
+    const { onFilterChange } = renderSummary(decisions);
+
+    await user.click(screen.getByRole("button", { name: /Care Management: 1 members/ }));
+    expect(onFilterChange).toHaveBeenCalledWith({ ...DEFAULT_FILTERS, navigation: "CARE_MANAGEMENT" });
+  });
+
+  it("clicking a safety donut segment sets the safety filter (Part 27 test 6)", async () => {
+    const user = userEvent.setup();
+    const decisions = [makeDecision({ member_id: "M1", safety: { state: "OVERRIDE", override: true } })];
+    const { onFilterChange } = renderSummary(decisions);
+
+    await user.click(screen.getByRole("button", { name: /^Override: 1 members/ }));
+    expect(onFilterChange).toHaveBeenCalledWith({ ...DEFAULT_FILTERS, safety: "OVERRIDE" });
+  });
+
+  it("shows an impossible-to-miss OVERRIDE callout only when the override count is non-zero", () => {
+    const withOverride = [makeDecision({ member_id: "M1", safety: { state: "OVERRIDE", override: true } })];
+    const { rerender } = renderSummary(withOverride);
+    expect(screen.getByText(/1 member in OVERRIDE/)).toBeInTheDocument();
+
+    const noOverride = [makeDecision({ member_id: "M1", safety: { state: "CLEAR", context_completeness: "COMPLETE", context_source: "CALLER_SUPPLIED" } })];
+    rerender(<PopulationSummary decisions={noOverride} filters={DEFAULT_FILTERS} onFilterChange={vi.fn()} />);
+    expect(screen.queryByText(/member.*in OVERRIDE/)).not.toBeInTheDocument();
+  });
+
+  it("clicking a probability histogram bin sets probMin/probMax", async () => {
+    const user = userEvent.setup();
+    const decisions = [makeDecision({ member_id: "M1", risk: { probability: 0.35 } })];
+    const { onFilterChange } = renderSummary(decisions);
+
+    await user.click(screen.getByRole("button", { name: /Probability 30–39%: 1 members/ }));
+    expect(onFilterChange).toHaveBeenCalledWith({ ...DEFAULT_FILTERS, probMin: "30", probMax: "40" });
   });
 });

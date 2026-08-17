@@ -148,6 +148,6 @@
     "log_loss": 0.312874
   },
   "tie_break_applied": false,
-  "frozen_at_utc": "2026-08-16T12:51:31.710730+00:00",
+  "frozen_at_utc": "2026-08-16T16:45:54.735333+00:00",
   "note": "This spec is frozen BEFORE any TEST data is loaded. It must not change based on TEST results."
 }

@@ -5,6 +5,7 @@
   --surface-card: #fcfcfb;
   --surface-card-hover: #f3f2ee;
   --surface-sunken: #f2f1ec;
+  --surface-elevated: #ffffff;
 
   --text-primary: #0b0b0b;
   --text-secondary: #52514e;
@@ -12,98 +13,252 @@
   --text-on-accent: #ffffff;
 
   --border: rgba(11, 11, 11, 0.1);
+  --border-strong: rgba(11, 11, 11, 0.18);
   --gridline: #e1e0d9;
   --baseline: #c3c2b7;
 
   --accent: #2a78d6;
   --accent-strong: #184f95;
+  --accent-bg: rgba(42, 120, 214, 0.1);
 
   --status-good: #0ca30c;
-  --status-warning: #fab219;
+  --status-warning: #b3760a;
   --status-critical: #d03b3b;
   --status-good-bg: rgba(12, 163, 12, 0.12);
-  --status-warning-bg: rgba(250, 178, 25, 0.16);
+  --status-warning-bg: rgba(179, 118, 10, 0.14);
   --status-critical-bg: rgba(208, 59, 59, 0.12);
+
+  /* Explainability (SHAP) -- purple/indigo, reserved for the
+     explainability section's own identity accent (icon/heading), never
+     used for risk/safety semantics. */
+  --explainability: #6d47c9;
+  --explainability-bg: rgba(109, 71, 201, 0.1);
+
+  /* GenAI explanation -- teal/indigo accent, deliberately distinct from
+     both the accent-blue (primary actions) and explainability-purple, so
+     an AI-generated section is visually recognizable without looking
+     "magical" or authoritative. */
+  --genai: #0f8b8d;
+  --genai-bg: rgba(15, 139, 141, 0.1);
 
   --cat-1: #2a78d6;
   --cat-2: #eb6834;
   --cat-3: #1baf7a;
 
+  /* Semantic aliases -- Section 22's named design-system tokens, layered
+     on top of the underlying palette above rather than duplicating
+     color values. */
+  --background: var(--surface-page);
+  --surface: var(--surface-card);
+  --primary: var(--accent);
+  --risk-low: var(--status-good);
+  --risk-low-bg: var(--status-good-bg);
+  --risk-moderate: var(--status-warning);
+  --risk-moderate-bg: var(--status-warning-bg);
+  --risk-high: var(--status-critical);
+  --risk-high-bg: var(--status-critical-bg);
+  --safety-clear: var(--status-good);
+  --safety-clear-bg: var(--status-good-bg);
+  --safety-caution: var(--status-warning);
+  --safety-caution-bg: var(--status-warning-bg);
+  --safety-override: var(--status-critical);
+  --safety-override-bg: var(--status-critical-bg);
+  --explainability-accent: var(--explainability);
+  --genai-accent: var(--genai);
+
+  /* Data-source identity accents (upload cards / data-sources strip) --
+     purely categorical (which dataset is this), never reused for a
+     risk/safety/navigation meaning. Blue / cyan-teal / violet, distinct
+     from each other and from the semantic good/warning/critical colors. */
+  --dataset-members: var(--accent);
+  --dataset-members-bg: var(--accent-bg);
+  --dataset-ed: #0e8f97;
+  --dataset-ed-bg: rgba(14, 143, 151, 0.1);
+  --dataset-care: #7c4dc4;
+  --dataset-care-bg: rgba(124, 77, 196, 0.1);
+
+  /* Navigation destination family -- one coordinated blue -> teal ->
+     violet ramp so the 5 destinations read as siblings of the same
+     category, never confused with risk/safety red-amber-green semantics.
+     "No proactive navigation" is deliberately neutral gray (absence of a
+     destination, not a category to draw the eye). */
+  --nav-primary-care: #2a78d6;
+  --nav-urgent-care: #1f96c9;
+  --nav-telehealth: #0e9488;
+  --nav-care-management: #6d5fd6;
+  --nav-none: #8a8f98;
+
+  --chart-grid: var(--gridline);
+
+  /* SHAP direction (Why Flagged diverging bars) -- deliberately its OWN
+     warm/cool pair, distinct from --risk-high/--risk-low, so a factor
+     that increased/decreased the estimate reads as an EXPLANATION detail
+     (its own visual identity, alongside --explainability) rather than as
+     a second risk-tier badge. Math/values are untouched -- color only. */
+  --shap-increase: #c23573;
+  --shap-decrease: #2f7fd1;
+
+  /* Strategic gradients -- used sparingly (primary CTA, AI/explainability
+     accents, app identity, selected analytics segment), never as a full
+     card background. */
+  --gradient-primary: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  --gradient-ai: linear-gradient(135deg, var(--genai), var(--explainability));
+  --gradient-brand: linear-gradient(135deg, var(--accent), var(--explainability));
+
   --shadow-sm: 0 1px 2px rgba(11, 11, 11, 0.06);
   --shadow-md: 0 8px 24px rgba(11, 11, 11, 0.08);
+  --shadow-lg: 0 24px 64px rgba(11, 11, 11, 0.16);
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
+  --radius-xl: 20px;
+
+  /* Spacing scale -- 4px base unit. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+
+  --transition-fast: 150ms ease;
+  --transition-base: 200ms ease;
+  --transition-slow: 250ms ease;
+
+  --content-max-width: 1360px;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
 
-    --surface-page: #0d0d0d;
-    --surface-card: #1a1a19;
-    --surface-card-hover: #212120;
-    --surface-sunken: #161615;
+    /* Sophisticated neutral charcoal, not pure black -- four distinct
+       elevation tiers (page < sunken < card < elevated) so stacked
+       surfaces (page -> card -> workspace panel -> its own header) are
+       still readable as layers without relying on shadow alone. */
+    --surface-page: #0c0d0e;
+    --surface-card: #17181a;
+    --surface-card-hover: #1f2023;
+    --surface-sunken: #131415;
+    --surface-elevated: #202226;
 
-    --text-primary: #ffffff;
-    --text-secondary: #c3c2b7;
-    --text-muted: #898781;
+    --text-primary: #f3f4f5;
+    --text-secondary: #b7bac0;
+    --text-muted: #82858c;
     --text-on-accent: #ffffff;
 
-    --border: rgba(255, 255, 255, 0.1);
-    --gridline: #2c2c2a;
-    --baseline: #383835;
+    --border: rgba(255, 255, 255, 0.09);
+    --border-strong: rgba(255, 255, 255, 0.16);
+    --gridline: #26282c;
+    --baseline: #34363b;
 
-    --accent: #3987e5;
-    --accent-strong: #86b6ef;
+    --accent: #4f9aef;
+    --accent-strong: #8cc0f7;
+    --accent-bg: rgba(79, 154, 239, 0.14);
 
-    --status-good: #0ca30c;
-    --status-warning: #fab219;
-    --status-critical: #d03b3b;
-    --status-good-bg: rgba(12, 163, 12, 0.18);
-    --status-warning-bg: rgba(250, 178, 25, 0.16);
-    --status-critical-bg: rgba(208, 59, 59, 0.2);
+    --status-good: #3ecf5f;
+    --status-warning: #f0a63c;
+    --status-critical: #f0564f;
+    --status-good-bg: rgba(62, 207, 95, 0.14);
+    --status-warning-bg: rgba(240, 166, 60, 0.15);
+    --status-critical-bg: rgba(240, 86, 79, 0.16);
 
-    --cat-1: #3987e5;
-    --cat-2: #d95926;
-    --cat-3: #199e70;
+    --explainability: #a487f0;
+    --explainability-bg: rgba(164, 135, 240, 0.14);
 
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+    --genai: #3fc4c6;
+    --genai-bg: rgba(63, 196, 198, 0.13);
+
+    --cat-1: #4f9aef;
+    --cat-2: #e88a52;
+    --cat-3: #3fc98a;
+
+    --dataset-ed: #3fc4c6;
+    --dataset-ed-bg: rgba(63, 196, 198, 0.14);
+    --dataset-care: #b08cf0;
+    --dataset-care-bg: rgba(176, 140, 240, 0.14);
+
+    --nav-primary-care: #4f9aef;
+    --nav-urgent-care: #4db8e0;
+    --nav-telehealth: #3fc9b5;
+    --nav-care-management: #9b8ff0;
+    --nav-none: #82858c;
+
+    --shap-increase: #e0578f;
+    --shap-decrease: #4f9aef;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.55);
   }
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --surface-page: #0d0d0d;
-  --surface-card: #1a1a19;
-  --surface-card-hover: #212120;
-  --surface-sunken: #161615;
+  --surface-page: #0c0d0e;
+  --surface-card: #17181a;
+  --surface-card-hover: #1f2023;
+  --surface-sunken: #131415;
+  --surface-elevated: #202226;
 
-  --text-primary: #ffffff;
-  --text-secondary: #c3c2b7;
-  --text-muted: #898781;
+  --text-primary: #f3f4f5;
+  --text-secondary: #b7bac0;
+  --text-muted: #82858c;
   --text-on-accent: #ffffff;
 
-  --border: rgba(255, 255, 255, 0.1);
-  --gridline: #2c2c2a;
-  --baseline: #383835;
+  --border: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --gridline: #26282c;
+  --baseline: #34363b;
 
-  --accent: #3987e5;
-  --accent-strong: #86b6ef;
+  --accent: #4f9aef;
+  --accent-strong: #8cc0f7;
+  --accent-bg: rgba(79, 154, 239, 0.14);
 
-  --status-good: #0ca30c;
-  --status-warning: #fab219;
-  --status-critical: #d03b3b;
-  --status-good-bg: rgba(12, 163, 12, 0.18);
-  --status-warning-bg: rgba(250, 178, 25, 0.16);
-  --status-critical-bg: rgba(208, 59, 59, 0.2);
+  --status-good: #3ecf5f;
+  --status-warning: #f0a63c;
+  --status-critical: #f0564f;
+  --status-good-bg: rgba(62, 207, 95, 0.14);
+  --status-warning-bg: rgba(240, 166, 60, 0.15);
+  --status-critical-bg: rgba(240, 86, 79, 0.16);
 
-  --cat-1: #3987e5;
-  --cat-2: #d95926;
-  --cat-3: #199e70;
+  --explainability: #a487f0;
+  --explainability-bg: rgba(164, 135, 240, 0.14);
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --genai: #3fc4c6;
+  --genai-bg: rgba(63, 196, 198, 0.13);
+
+  --cat-1: #4f9aef;
+  --cat-2: #e88a52;
+  --cat-3: #3fc98a;
+
+  --dataset-ed: #3fc4c6;
+  --dataset-ed-bg: rgba(63, 196, 198, 0.14);
+  --dataset-care: #b08cf0;
+  --dataset-care-bg: rgba(176, 140, 240, 0.14);
+
+  --nav-primary-care: #4f9aef;
+  --nav-urgent-care: #4db8e0;
+  --nav-telehealth: #3fc9b5;
+  --nav-care-management: #9b8ff0;
+  --nav-none: #82858c;
+
+  --shap-increase: #e0578f;
+  --shap-decrease: #4f9aef;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.55);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

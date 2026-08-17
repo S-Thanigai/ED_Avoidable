@@ -15,9 +15,7 @@ export function Header({ theme, onToggleTheme }: HeaderProps) {
           </div>
           <div>
             <h1 className="app-header__title">Avoidable ED Utilization Navigator</h1>
-            <p className="app-header__subtitle">
-              Care management &middot; pattern detection &amp; lower-acuity navigation
-            </p>
+            <p className="app-header__subtitle">AI-assisted risk detection and care navigation</p>
           </div>
         </div>
         <button

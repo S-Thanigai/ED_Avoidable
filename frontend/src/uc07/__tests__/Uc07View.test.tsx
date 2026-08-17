@@ -10,7 +10,7 @@ vi.mock("../api", async () => {
   return { ...actual, decideUC07: vi.fn() };
 });
 
-// 30 decisions: enough to exercise 25-per-page pagination, with a
+// 30 decisions: enough to exercise 15-per-page pagination, with a
 // distinct predictable tier/probability pattern for filter/sort assertions.
 function buildResponse(): UC07DecideResponse {
   const decisions = Array.from({ length: 30 }, (_, i) => {
@@ -45,7 +45,7 @@ async function uploadThreeFiles(container: HTMLElement) {
 }
 
 describe("Uc07View -- filters + sort + pagination + details state management", () => {
-  it("paginates 25 per page, filters, sorts, and preserves state when a details drawer opens/closes", async () => {
+  it("paginates exactly 15 per page, filters, sorts, and preserves state when a details drawer opens/closes", async () => {
     const { decideUC07 } = await import("../api");
     vi.mocked(decideUC07).mockResolvedValue(buildResponse());
 
@@ -53,20 +53,28 @@ describe("Uc07View -- filters + sort + pagination + details state management", (
     const { container } = render(<Uc07View />);
 
     await uploadThreeFiles(container);
-    await user.click(screen.getByRole("button", { name: /get uc07 decision/i }));
+    await user.click(screen.getByRole("button", { name: /run risk analysis/i }));
 
-    // population summary + table appear
-    expect(await screen.findByText("Showing 1–25 of 30 members")).toBeInTheDocument();
-    expect(screen.getAllByRole("row")).toHaveLength(26); // header + 25 rows
+    // population summary + table appear -- exactly 15 rows on page 1
+    expect(await screen.findByText("Showing 1–15 of 30 members")).toBeInTheDocument();
+    expect(screen.getAllByRole("row")).toHaveLength(16); // header + 15 rows
+
+    // page 2 starts at the 16th member (M00016), not the 26th
+    await user.click(screen.getByRole("button", { name: "2" }));
+    expect(await screen.findByText("Showing 16–30 of 30 members")).toBeInTheDocument();
+    expect(screen.getAllByRole("row")).toHaveLength(16); // header + remaining 15 rows
+    expect(within(screen.getAllByRole("row")[1]).getByText("M00016")).toBeInTheDocument();
 
     // filter to HIGH risk only (10 members) -> resets to page 1 automatically
     const riskSelect = screen.getByDisplayValue("Risk: All");
     await user.selectOptions(riskSelect, "HIGH");
     expect(await screen.findByText("Showing 1–10 of 10 members")).toBeInTheDocument();
 
-    // sort by probability descending
-    await user.click(screen.getByRole("button", { name: /probability/i }));
-    await user.click(screen.getByRole("button", { name: /probability/i }));
+    // sort by probability descending (exact name -- the Probability
+    // Distribution chart's histogram-bin buttons also start with
+    // "Probability", so an unanchored match would be ambiguous)
+    await user.click(screen.getByRole("button", { name: "Probability" }));
+    await user.click(screen.getByRole("button", { name: "Probability" }));
     const firstDataRow = screen.getAllByRole("row")[1];
     expect(within(firstDataRow).getByText("M00030")).toBeInTheDocument();
 
@@ -88,13 +96,56 @@ describe("Uc07View -- filters + sort + pagination + details state management", (
     const user = userEvent.setup();
     const { container } = render(<Uc07View />);
     await uploadThreeFiles(container);
-    await user.click(screen.getByRole("button", { name: /get uc07 decision/i }));
-    await screen.findByText("Showing 1–25 of 30 members");
+    await user.click(screen.getByRole("button", { name: /run risk analysis/i }));
+    await screen.findByText("Showing 1–15 of 30 members");
 
     await user.type(screen.getByPlaceholderText("Search member ID…"), "NOT_A_REAL_ID");
     expect(await screen.findByText("No members match the selected filters.")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Clear filters" }));
-    expect(await screen.findByText("Showing 1–25 of 30 members")).toBeInTheDocument();
+    expect(await screen.findByText("Showing 1–15 of 30 members")).toBeInTheDocument();
+  });
+
+  it("keeps chart selections and the dropdown filter in sync in both directions (Part 27 test 7)", async () => {
+    const { decideUC07 } = await import("../api");
+    vi.mocked(decideUC07).mockResolvedValue(buildResponse());
+
+    const user = userEvent.setup();
+    const { container } = render(<Uc07View />);
+    await uploadThreeFiles(container);
+    await user.click(screen.getByRole("button", { name: /run risk analysis/i }));
+    await screen.findByText("Showing 1–15 of 30 members");
+
+    // Chart click -> the dropdown reflects it, the table filters, and a
+    // chip appears (there is only one filters state -- chart clicks and
+    // the dropdown both write to it).
+    await user.click(screen.getByRole("button", { name: /^High: 10 members/ }));
+    expect(await screen.findByDisplayValue("High")).toBeInTheDocument();
+    expect(await screen.findByText("Showing 1–10 of 10 members")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Remove filter HIGH/i })).toBeInTheDocument();
+
+    // Dropdown change -> the chart's legend button reflects the new
+    // selection as active (aria-pressed / "filter active" label).
+    await user.selectOptions(screen.getByDisplayValue("High"), "LOW");
+    expect(await screen.findByRole("button", { name: /^Low: 10 members.*filter active/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^High: 10 members/ })).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("Clear Filters resets chart selections along with the dropdowns (Part 27 test 8)", async () => {
+    const { decideUC07 } = await import("../api");
+    vi.mocked(decideUC07).mockResolvedValue(buildResponse());
+
+    const user = userEvent.setup();
+    const { container } = render(<Uc07View />);
+    await uploadThreeFiles(container);
+    await user.click(screen.getByRole("button", { name: /run risk analysis/i }));
+    await screen.findByText("Showing 1–15 of 30 members");
+
+    await user.click(screen.getByRole("button", { name: /^High: 10 members/ }));
+    expect(await screen.findByText("Showing 1–10 of 10 members")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Clear all filters" }));
+    expect(await screen.findByText("Showing 1–15 of 30 members")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^High: 10 members/ })).toHaveAttribute("aria-pressed", "false");
   });
 });

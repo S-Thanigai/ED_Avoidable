@@ -7,7 +7,7 @@ import { DisclaimerBanner } from "./components/DisclaimerBanner";
 import { UploadPanel } from "./components/UploadPanel";
 import { StatCards } from "./components/StatCards";
 import { RiskDistributionChart } from "./components/RiskDistributionChart";
-import { PatientTable } from "./components/PatientTable";
+import { PatientTable } from "./components/LegacyPatientTable";
 import { PatientDetailPanel } from "./components/PatientDetailPanel";
 import { EmptyState } from "./components/EmptyState";
 import { ErrorBanner } from "./components/ErrorBanner";
@@ -88,7 +88,7 @@ function App() {
       <nav className="tab-nav" aria-label="Application view">
         <button
           type="button"
-          className={`tab-nav__tab${tab === "uc07" ? " tab-nav__tab--active" : ""}`}
+          className={`tab-nav__tab tab-nav__tab--primary${tab === "uc07" ? " tab-nav__tab--active" : ""}`}
           onClick={() => setTab("uc07")}
           aria-current={tab === "uc07" ? "page" : undefined}
         >
@@ -96,11 +96,12 @@ function App() {
         </button>
         <button
           type="button"
-          className={`tab-nav__tab${tab === "legacy" ? " tab-nav__tab--active" : ""}`}
+          className={`tab-nav__tab tab-nav__tab--legacy${tab === "legacy" ? " tab-nav__tab--active" : ""}`}
           onClick={() => setTab("legacy")}
           aria-current={tab === "legacy" ? "page" : undefined}
         >
           Legacy Demo
+          <span className="tab-nav__legacy-tag">Legacy</span>
         </button>
       </nav>
 
