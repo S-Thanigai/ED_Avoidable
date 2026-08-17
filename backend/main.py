@@ -24,8 +24,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
-from feature_engineering import extract_features
-from predict import MODEL_PATH, explain_member, predict
+try:
+    from backend.feature_engineering import extract_features
+    from backend.predict import MODEL_PATH, explain_member, predict
+except ModuleNotFoundError:
+    from feature_engineering import extract_features
+    from predict import MODEL_PATH, explain_member, predict
 
 # ---------------------------------------------------------------------------
 # App setup
