@@ -44,34 +44,34 @@
 
 /* CLEAR: calm, affirmative -- but never louder/larger than CAUTION/OVERRIDE */
 .safety-card--clear {
-  border-color: var(--status-good);
-  background: var(--status-good-bg);
+  border-color: var(--safety-clear);
+  background: var(--safety-clear-bg);
 }
 .safety-card--clear .safety-card__state {
-  color: var(--status-good);
+  color: var(--safety-clear);
 }
 
 /* CAUTION: must never read as "safe" -- warning color, not green,
    never de-emphasized relative to CLEAR */
 .safety-card--caution {
-  border-color: var(--status-warning);
-  background: var(--status-warning-bg);
+  border-color: var(--safety-caution);
+  background: var(--safety-caution-bg);
 }
 .safety-card--caution .safety-card__state {
-  color: var(--status-warning);
+  color: var(--safety-caution);
 }
 
 /* OVERRIDE: strongest visual priority on the page -- larger text,
    thicker border, critical color, deliberately more prominent than
    every other state or the navigation card beneath it */
 .safety-card--override {
-  border-color: var(--status-critical);
+  border-color: var(--safety-override);
   border-width: 3px;
-  background: var(--status-critical-bg);
+  background: var(--safety-override-bg);
   box-shadow: var(--shadow-md);
 }
 .safety-card--override .safety-card__state {
-  color: var(--status-critical);
+  color: var(--safety-override);
   font-size: 1.25rem;
 }
 .safety-card--override .safety-card__message {

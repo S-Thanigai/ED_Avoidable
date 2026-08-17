@@ -1,0 +1,67 @@
+.risk-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.risk-pill__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.risk-pill--low {
+  background: var(--status-good-bg);
+  color: var(--text-primary);
+}
+.risk-pill--low .risk-pill__dot {
+  background: var(--status-good);
+}
+
+.risk-pill--medium {
+  background: var(--status-warning-bg);
+  color: var(--text-primary);
+}
+.risk-pill--medium .risk-pill__dot {
+  background: var(--status-warning);
+}
+
+.risk-pill--high {
+  background: var(--status-critical-bg);
+  color: var(--text-primary);
+}
+.risk-pill--high .risk-pill__dot {
+  background: var(--status-critical);
+}
+
+.care-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.care-pill--pcp {
+  color: var(--cat-1);
+  background: color-mix(in srgb, var(--cat-1) 14%, transparent);
+  border-color: color-mix(in srgb, var(--cat-1) 30%, transparent);
+}
+.care-pill--urgent {
+  color: var(--cat-2);
+  background: color-mix(in srgb, var(--cat-2) 14%, transparent);
+  border-color: color-mix(in srgb, var(--cat-2) 30%, transparent);
+}
+.care-pill--telehealth {
+  color: var(--cat-3);
+  background: color-mix(in srgb, var(--cat-3) 14%, transparent);
+  border-color: color-mix(in srgb, var(--cat-3) 30%, transparent);
+}

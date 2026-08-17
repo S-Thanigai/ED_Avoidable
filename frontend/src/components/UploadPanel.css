@@ -1,0 +1,265 @@
+.upload-panel {
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-sm);
+}
+
+.upload-panel__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-3);
+}
+
+.dropzone {
+  /* Coordinated per-dataset identity accent (Part 3): overridden per
+     zone below. Kept restrained -- only the icon chip and a thin top
+     accent use full color; the card body stays neutral until filled. */
+  --zone-accent: var(--accent);
+  --zone-accent-bg: var(--accent-bg);
+
+  position: relative;
+  border: 1.5px dashed var(--baseline);
+  border-top: 3px solid color-mix(in srgb, var(--zone-accent) 45%, var(--baseline));
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  min-height: 108px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  justify-content: center;
+  cursor: pointer;
+  background: var(--surface-sunken);
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast);
+}
+
+.dropzone--members {
+  --zone-accent: var(--dataset-members);
+  --zone-accent-bg: var(--dataset-members-bg);
+}
+.dropzone--ed {
+  --zone-accent: var(--dataset-ed);
+  --zone-accent-bg: var(--dataset-ed-bg);
+}
+.dropzone--care {
+  --zone-accent: var(--dataset-care);
+  --zone-accent-bg: var(--dataset-care-bg);
+}
+
+.dropzone:hover {
+  border-color: var(--zone-accent);
+}
+
+.dropzone:focus-visible {
+  outline: 2px solid var(--zone-accent);
+  outline-offset: 2px;
+}
+
+.dropzone--over {
+  border-color: var(--zone-accent);
+  background: color-mix(in srgb, var(--zone-accent) 8%, var(--surface-sunken));
+}
+
+/* Subtle success treatment: a small check badge, not a full-box color
+   wash -- the border switches to solid and picks up a faint tint, the
+   dropzone otherwise keeps its normal surface color. */
+.dropzone--filled {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--status-good) 55%, var(--baseline));
+  background: color-mix(in srgb, var(--status-good) 5%, var(--surface-sunken));
+}
+
+.dropzone--error {
+  border-style: solid;
+  border-color: var(--status-critical);
+  background: var(--status-critical-bg);
+}
+
+.dropzone__top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.dropzone__icon-chip {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: var(--zone-accent-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition-fast);
+}
+
+.dropzone__icon {
+  width: 16px;
+  height: 16px;
+  color: var(--zone-accent);
+  flex-shrink: 0;
+}
+
+.dropzone--filled .dropzone__icon-chip {
+  background: var(--status-good-bg);
+}
+.dropzone--filled .dropzone__icon {
+  color: var(--status-good);
+}
+
+.dropzone__label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.dropzone__success {
+  margin-left: auto;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--status-good-bg);
+  color: var(--status-good);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.dropzone__success svg {
+  width: 10px;
+  height: 10px;
+}
+
+.dropzone__cta {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.dropzone__hint {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+
+.dropzone__filename {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  word-break: break-all;
+  padding-right: 20px;
+}
+
+.dropzone__error-text {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--status-critical);
+}
+
+.dropzone__clear {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: var(--surface-card);
+  color: var(--text-secondary);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.dropzone__clear:hover {
+  background: var(--status-critical-bg);
+  color: var(--status-critical);
+}
+.dropzone__clear:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.upload-panel__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+  flex-wrap: wrap;
+}
+
+.run-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  padding: 11px 22px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: not-allowed;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+/* Only visually reads as "ready" once every required file is present --
+   functional readiness (the disabled attribute) is unchanged either
+   way, this is purely the visual cue the spec asks for. */
+.run-button--ready {
+  background: var(--gradient-primary);
+  color: var(--text-on-accent);
+  border-color: var(--accent);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+
+.run-button--ready:not(:disabled):hover {
+  border-color: var(--accent-strong);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.run-button:disabled {
+  opacity: 0.7;
+}
+
+.upload-panel__note {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--text-on-accent) 40%, transparent);
+  border-top-color: var(--text-on-accent);
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 480px) {
+  .upload-panel {
+    padding: var(--space-4);
+  }
+}

@@ -28,57 +28,98 @@ const FALLBACK_EXPLANATION: MemberExplanationResponse = {
   generation_time_ms: null,
 };
 
-describe("MemberDetailsDrawer", () => {
-  it("composes the decision panel, data sections, safety context, and AI explanation for the given member", async () => {
+function renderDrawer(overrides: Parameters<typeof makeDecision>[0] = {}, extraProps: Partial<Parameters<typeof MemberDetailsDrawer>[0]> = {}) {
+  const decision = makeDecision({ member_id: "M00123", ...overrides });
+  const onClose = vi.fn();
+  const onSafetyEvaluated = vi.fn();
+  const utils = render(
+    <MemberDetailsDrawer
+      decision={decision}
+      lookups={null}
+      lookupsLoading={false}
+      files={FILES}
+      indexDate="2026-07-03"
+      onSafetyEvaluated={onSafetyEvaluated}
+      onClose={onClose}
+      {...extraProps}
+    />,
+  );
+  return { ...utils, decision, onClose, onSafetyEvaluated };
+}
+
+describe("MemberDetailsDrawer (member workspace)", () => {
+  it("opens on the Overview tab, showing risk/navigation/safety at a glance and in full", () => {
+    const { decision } = renderDrawer();
+    expect(screen.getByRole("dialog", { name: /details for member m00123/i })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Overview", selected: true })).toBeInTheDocument();
+    // header "at a glance" metrics
+    expect(screen.getByText(decision.member_id)).toBeInTheDocument();
+    // full RiskCard/SafetyCard/NavigationCard render in the Overview panel
+    expect(screen.getByRole("region", { name: "Risk assessment" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Safety status" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Navigation recommendation" })).toBeInTheDocument();
+  });
+
+  it("does not fetch an AI explanation until the AI Explanation tab is actually opened (lazy, Part 14)", async () => {
     const { explainMember } = await import("../api");
     vi.mocked(explainMember).mockResolvedValue(FALLBACK_EXPLANATION);
+    const user = userEvent.setup();
+    renderDrawer();
 
-    const decision = makeDecision({ member_id: "M00123" });
-    render(
-      <MemberDetailsDrawer
-        decision={decision}
-        lookups={null}
-        lookupsLoading={false}
-        files={FILES}
-        indexDate="2026-07-03"
-        onSafetyEvaluated={() => {}}
-        onClose={() => {}}
-      />,
-    );
+    expect(explainMember).not.toHaveBeenCalled();
 
-    expect(screen.getByRole("dialog", { name: /details for member m00123/i })).toBeInTheDocument();
-    expect(screen.getByText("M00123")).toBeInTheDocument();
-    // AiExplanationSection fetched an explanation scoped to THIS decision
-    expect(explainMember).toHaveBeenCalledWith(decision);
-    expect(screen.getByText("AI Explanation")).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: "AI Explanation" }));
+    expect(await screen.findByRole("heading", { name: "AI Explanation" })).toBeInTheDocument();
+    expect(explainMember).toHaveBeenCalledTimes(1);
+  });
+
+  it("switches to the Why Flagged tab and shows the SHAP explanation there", async () => {
+    const user = userEvent.setup();
+    renderDrawer();
+    await user.click(screen.getByRole("tab", { name: "Why Flagged" }));
+    expect(screen.getByText("Why This Member Was Flagged")).toBeInTheDocument();
+  });
+
+  it("switches to the Current Safety tab and exposes the safety-context evaluator there", async () => {
+    const user = userEvent.setup();
+    renderDrawer();
+    await user.click(screen.getByRole("tab", { name: "Current Safety" }));
     expect(screen.getByRole("region", { name: "Current safety context" })).toBeInTheDocument();
   });
 
-  it("calls onClose on Escape and on overlay click, but not on a click inside the drawer body", async () => {
-    const { explainMember } = await import("../api");
-    vi.mocked(explainMember).mockResolvedValue(FALLBACK_EXPLANATION);
-
-    const onClose = vi.fn();
+  it("shows the strongest-priority OVERRIDE banner regardless of which tab is active", async () => {
     const user = userEvent.setup();
-    const decision = makeDecision({ member_id: "M00001" });
-    const { container } = render(
-      <MemberDetailsDrawer
-        decision={decision}
-        lookups={null}
-        lookupsLoading={false}
-        files={FILES}
-        indexDate="2026-07-03"
-        onSafetyEvaluated={() => {}}
-        onClose={onClose}
-      />,
-    );
+    renderDrawer({ safety: { state: "OVERRIDE", override: true }, navigation: { destination: null, reason_codes: [], explanation: "x" } });
+    const banner = () => document.querySelector(".member-workspace__override-banner");
+    expect(banner()).toHaveTextContent(/safety override active/i);
+    await user.click(screen.getByRole("tab", { name: "Why Flagged" }));
+    expect(banner()).toHaveTextContent(/safety override active/i);
+  });
 
-    // click inside the dialog body must NOT close it
+  it("resets to the Overview tab when a different member is opened", async () => {
+    const user = userEvent.setup();
+    const decision1 = makeDecision({ member_id: "M00001" });
+    const { rerender } = render(
+      <MemberDetailsDrawer decision={decision1} lookups={null} lookupsLoading={false} files={FILES} indexDate="2026-07-03" onSafetyEvaluated={() => {}} onClose={() => {}} />,
+    );
+    await user.click(screen.getByRole("tab", { name: "Why Flagged" }));
+    expect(screen.getByRole("tab", { name: "Why Flagged", selected: true })).toBeInTheDocument();
+
+    const decision2 = makeDecision({ member_id: "M00002" });
+    rerender(
+      <MemberDetailsDrawer decision={decision2} lookups={null} lookupsLoading={false} files={FILES} indexDate="2026-07-03" onSafetyEvaluated={() => {}} onClose={() => {}} />,
+    );
+    expect(screen.getByRole("tab", { name: "Overview", selected: true })).toBeInTheDocument();
+  });
+
+  it("calls onClose on Escape and on overlay click, but not on a click inside the workspace", async () => {
+    const user = userEvent.setup();
+    const { onClose } = renderDrawer();
+
     await user.click(screen.getByRole("dialog"));
     expect(onClose).not.toHaveBeenCalled();
 
-    // click on the overlay itself (outside the dialog) DOES close it
-    const overlay = container.querySelector(".member-details-drawer__overlay")!;
+    const overlay = document.querySelector(".member-workspace__overlay") as HTMLElement;
     await user.click(overlay);
     expect(onClose).toHaveBeenCalledTimes(1);
 
@@ -86,29 +127,22 @@ describe("MemberDetailsDrawer", () => {
     expect(onClose).toHaveBeenCalledTimes(2);
   });
 
+  it("focuses the close button on open and traps Tab focus within the workspace", async () => {
+    renderDrawer();
+    expect(screen.getByLabelText("Close member details")).toHaveFocus();
+  });
+
   it("passes onSafetyEvaluated through to the Current Safety Context section", async () => {
-    const { explainMember, decideUC07, UC07ApiError } = await import("../api");
-    vi.mocked(explainMember).mockResolvedValue(FALLBACK_EXPLANATION);
+    const { decideUC07 } = await import("../api");
     const updated = makeDecision({ member_id: "M00001", safety: { state: "CLEAR", context_completeness: "COMPLETE", context_source: "CALLER_SUPPLIED" } });
     vi.mocked(decideUC07).mockResolvedValue({
       model_version: "v1", dataset_id: "d1", synthetic_model: true, index_date: "2026-07-03", count: 1, decisions: [updated],
     });
 
-    const onSafetyEvaluated = vi.fn();
     const user = userEvent.setup();
-    const decision = makeDecision({ member_id: "M00001", safety: { state: "CAUTION" } });
-    render(
-      <MemberDetailsDrawer
-        decision={decision}
-        lookups={null}
-        lookupsLoading={false}
-        files={FILES}
-        indexDate="2026-07-03"
-        onSafetyEvaluated={onSafetyEvaluated}
-        onClose={() => {}}
-      />,
-    );
+    const { onSafetyEvaluated } = renderDrawer({ member_id: "M00001", safety: { state: "CAUTION" } });
 
+    await user.click(screen.getByRole("tab", { name: "Current Safety" }));
     await user.selectOptions(screen.getByLabelText(/red-flag symptom present/i), "0");
     await user.selectOptions(screen.getByLabelText(/^icu$/i), "0");
     await user.selectOptions(screen.getByLabelText(/admitted/i), "0");
@@ -117,6 +151,5 @@ describe("MemberDetailsDrawer", () => {
     await user.click(screen.getByRole("button", { name: /evaluate current safety/i }));
 
     expect(onSafetyEvaluated).toHaveBeenCalledWith(updated);
-    void UC07ApiError; // referenced to satisfy the import above
   });
 });

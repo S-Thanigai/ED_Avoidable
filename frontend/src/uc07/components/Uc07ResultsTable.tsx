@@ -10,9 +10,15 @@ const DEST_LABEL: Record<string, string> = {
   NO_PROACTIVE_NAVIGATION: "No proactive navigation",
 };
 
+const SAFETY_LABEL: Record<string, string> = {
+  CLEAR: "Clear",
+  CAUTION: "Caution",
+  OVERRIDE: "Override",
+};
+
 const SORTABLE_COLUMNS: { key: SortKey; label: string }[] = [
   { key: "member_id", label: "Member" },
-  { key: "tier", label: "Risk tier" },
+  { key: "tier", label: "Risk Tier" },
   { key: "probability", label: "Probability" },
   { key: "navigation", label: "Navigation" },
 ];
@@ -61,12 +67,14 @@ export function Uc07ResultsTable({
                 </button>
               </th>
             ))}
-            <th scope="col">Details</th>
+            <th scope="col">Safety</th>
+            <th scope="col">Action</th>
           </tr>
         </thead>
         <tbody>
           {decisions.map((decision) => {
             const isSelected = decision.member_id === selectedMemberId;
+            const pct = decision.risk.probability * 100;
             return (
               <tr
                 key={decision.member_id}
@@ -87,11 +95,26 @@ export function Uc07ResultsTable({
                     {decision.risk.tier}
                   </span>
                 </td>
-                <td className="tabular">{(decision.risk.probability * 100).toFixed(1)}%</td>
+                <td className="tabular">
+                  <div className="uc07-results-table__prob">
+                    <span className="uc07-results-table__prob-value">{pct.toFixed(1)}%</span>
+                    <span className="uc07-results-table__prob-bar" aria-hidden="true">
+                      <span
+                        className={`uc07-results-table__prob-bar-fill uc07-results-table__prob-bar-fill--${decision.risk.tier.toLowerCase()}`}
+                        style={{ width: `${Math.min(100, pct)}%` }}
+                      />
+                    </span>
+                  </div>
+                </td>
                 <td>
                   {decision.navigation.destination
                     ? DEST_LABEL[decision.navigation.destination] ?? decision.navigation.destination
                     : "Suppressed by override"}
+                </td>
+                <td>
+                  <span className={`uc07-results-table__safety uc07-results-table__safety--${decision.safety.state.toLowerCase()}`}>
+                    {SAFETY_LABEL[decision.safety.state] ?? decision.safety.state}
+                  </span>
                 </td>
                 <td>
                   <button

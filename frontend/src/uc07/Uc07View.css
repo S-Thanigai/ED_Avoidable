@@ -1,25 +1,134 @@
 .uc07-view {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: var(--space-5);
 }
 
 .uc07-view__intro {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
+}
+
+.uc07-view__data-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
 .uc07-view__section-heading {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 4px 0 -6px;
-  font-size: 0.9rem;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+}
+
+/* Compact "Setup -> Results" summary strip shown once a run has
+   succeeded, replacing the full Data Inputs section so the population
+   results occupy the top of the viewport instead. */
+.uc07-view__data-inputs-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-5);
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  box-shadow: var(--shadow-sm);
+}
+
+.uc07-view__data-inputs-summary-heading {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.uc07-view__data-inputs-summary-item {
+  --zone-accent: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.uc07-view__data-inputs-summary-item--members {
+  --zone-accent: var(--dataset-members);
+}
+.uc07-view__data-inputs-summary-item--ed {
+  --zone-accent: var(--dataset-ed);
+}
+.uc07-view__data-inputs-summary-item--care {
+  --zone-accent: var(--dataset-care);
+}
+
+.uc07-view__data-inputs-summary-check {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--status-good-bg);
+  color: var(--status-good);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid color-mix(in srgb, var(--zone-accent) 40%, transparent);
+}
+.uc07-view__data-inputs-summary-check svg {
+  width: 11px;
+  height: 11px;
+}
+
+.uc07-view__data-inputs-summary-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+.uc07-view__data-inputs-summary-text strong {
+  font-size: 0.78rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--zone-accent);
+}
+.uc07-view__data-inputs-summary-text span {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.uc07-view__data-inputs-summary-item--optional {
+  --zone-accent: var(--text-muted);
+  opacity: 0.9;
+}
+
+.uc07-view__change-files {
+  margin-left: auto;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-page);
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+.uc07-view__change-files:hover {
+  background: var(--surface-card-hover);
+}
+.uc07-view__change-files:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .uc07-view__required-badge {
@@ -55,10 +164,11 @@
   background: var(--surface-card);
   color: var(--text-primary);
   font-size: 0.9rem;
+  transition: border-color var(--transition-fast);
 }
-
-.uc07-view__run {
-  align-self: flex-start;
+.uc07-view__member-field input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 .uc07-view__empty {

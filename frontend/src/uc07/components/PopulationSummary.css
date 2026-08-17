@@ -1,84 +1,87 @@
 .population-summary {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-4);
+}
+
+.population-summary__header {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+}
+
+.population-summary__heading {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
 }
 
 .population-summary__caveat {
-  font-size: 0.78rem;
+  margin: 0;
+  font-size: 0.76rem;
   color: var(--text-muted);
 }
 
-.population-summary__caveat strong {
-  color: var(--text-secondary);
-}
-
-.population-summary__grid {
+.population-summary__kpis {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-3);
 }
 
-.population-summary__card {
+.population-summary__kpi {
   background: var(--surface-card);
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 12px 16px;
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   box-shadow: var(--shadow-sm);
 }
 
-.population-summary__card-title {
-  display: block;
-  font-size: 0.76rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+.population-summary__kpi-value {
+  font-size: 1.9rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+
+.population-summary__kpi-label {
+  font-size: 0.8rem;
+  font-weight: 600;
   color: var(--text-secondary);
-  margin-bottom: 8px;
 }
 
-.population-summary__card-rows {
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
+.population-summary__kpi-percent {
+  font-size: 0.72rem;
+  color: var(--text-muted);
 }
 
-.population-summary__card-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  font-size: 0.86rem;
+/* The Override KPI is the one number on this dashboard that must never
+   read as "just another metric" -- safety has final authority in the
+   underlying system, so its card carries the strongest visual weight
+   whenever the count is non-zero. */
+.population-summary__kpi--critical {
+  border-color: color-mix(in srgb, var(--safety-override) 45%, var(--border));
+  background: linear-gradient(180deg, var(--safety-override-bg), var(--surface-card) 70%);
+}
+.population-summary__kpi--critical .population-summary__kpi-value {
+  color: var(--safety-override);
 }
 
-.population-summary__card-row dt {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--text-primary);
-  font-weight: 500;
+.population-summary__charts {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
 }
 
-.population-summary__card-row dd {
-  margin: 0;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.population-summary__dot-mark {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-.population-summary__dot--good .population-summary__dot-mark {
-  background: var(--status-good);
-}
-.population-summary__dot--warning .population-summary__dot-mark {
-  background: var(--status-warning);
-}
-.population-summary__dot--critical .population-summary__dot-mark {
-  background: var(--status-critical);
+@media (max-width: 860px) {
+  .population-summary__charts {
+    grid-template-columns: 1fr;
+  }
 }

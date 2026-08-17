@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Uc07View } from "../Uc07View";
 import { makeDecision } from "./fixtures";
@@ -35,8 +35,14 @@ async function uploadThreeFiles(container: HTMLElement) {
 }
 
 function safetyCardCounts() {
-  const card = screen.getByText("Safety").closest(".population-summary__card")!;
-  return Array.from(card.querySelectorAll("dd")).map((el) => el.textContent);
+  // Scoped to the Population Overview's Safety Distribution chart card
+  // specifically -- "Safety" also appears as a standalone glance label
+  // in the member workspace header when a member's details are open,
+  // which would otherwise make this query ambiguous. Order matches
+  // SAFETY_META in AnalyticsCharts.tsx: CLEAR, CAUTION, OVERRIDE.
+  const summary = screen.getByRole("region", { name: "Population overview and analytics" });
+  const card = within(summary).getByText("Safety Distribution").closest(".analytics-card")!;
+  return Array.from(card.querySelectorAll(".analytics-legend__count")).map((el) => el.textContent);
 }
 
 describe("Uc07View -- batch mixed safety states + Evaluate Current Safety integration", () => {
@@ -47,7 +53,7 @@ describe("Uc07View -- batch mixed safety states + Evaluate Current Safety integr
     const user = userEvent.setup();
     const { container } = render(<Uc07View />);
     await uploadThreeFiles(container);
-    await user.click(screen.getByRole("button", { name: /get uc07 decision/i }));
+    await user.click(screen.getByRole("button", { name: /run risk analysis/i }));
 
     await screen.findByText("Showing 1–3 of 3 members");
     // 1 CLEAR, 1 CAUTION, 1 OVERRIDE (in that row order: see PopulationSummary's SAFETY_ROWS)
@@ -61,13 +67,14 @@ describe("Uc07View -- batch mixed safety states + Evaluate Current Safety integr
     const user = userEvent.setup();
     const { container } = render(<Uc07View />);
     await uploadThreeFiles(container);
-    await user.click(screen.getByRole("button", { name: /get uc07 decision/i }));
+    await user.click(screen.getByRole("button", { name: /run risk analysis/i }));
     await screen.findByText("Showing 1–3 of 3 members");
     expect(safetyCardCounts()).toEqual(["1", "1", "1"]); // CLEAR / CAUTION / OVERRIDE
 
     // Open M00002 (currently CAUTION) and evaluate it to CLEAR.
     await user.click(screen.getByText("M00002"));
     const dialog = await screen.findByRole("dialog", { name: /details for member m00002/i });
+    await user.click(within(dialog).getByRole("tab", { name: "Current Safety" }));
 
     const updated = makeDecision({ member_id: "M00002", safety: { state: "CLEAR", context_completeness: "COMPLETE", context_source: "CALLER_SUPPLIED" } });
     vi.mocked(decideUC07).mockResolvedValueOnce({
@@ -87,7 +94,9 @@ describe("Uc07View -- batch mixed safety states + Evaluate Current Safety integr
 
     // the drawer's Current Safety Context section reflects the new state immediately (still open)
     const currentSafetySection = within(dialog).getByRole("region", { name: "Current safety context" });
-    expect(await within(currentSafetySection).findByText("Clear")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(currentSafetySection.querySelector(".current-safety-context__state")).toHaveTextContent("Clear");
+    });
 
     await user.click(screen.getByLabelText("Close member details"));
 
@@ -102,7 +111,7 @@ describe("Uc07View -- batch mixed safety states + Evaluate Current Safety integr
     const user = userEvent.setup();
     const { container } = render(<Uc07View />);
     await uploadThreeFiles(container);
-    await user.click(screen.getByRole("button", { name: /get uc07 decision/i }));
+    await user.click(screen.getByRole("button", { name: /run risk analysis/i }));
     await screen.findByText("Showing 1–3 of 3 members");
 
     await user.click(screen.getByText("M00001"));
