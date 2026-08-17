@@ -6,17 +6,18 @@ import { Pagination } from "../components/Pagination";
 describe("Pagination", () => {
   it("shows the correct range for the first page", () => {
     render(<Pagination page={1} totalItems={137} onPageChange={() => {}} />);
-    expect(screen.getByText("Showing 1–25 of 137 members")).toBeInTheDocument();
+    expect(screen.getByText("Showing 1–15 of 137 members")).toBeInTheDocument();
   });
 
   it("shows the correct range for an interior page", () => {
     render(<Pagination page={2} totalItems={137} onPageChange={() => {}} />);
-    expect(screen.getByText("Showing 26–50 of 137 members")).toBeInTheDocument();
+    expect(screen.getByText("Showing 16–30 of 137 members")).toBeInTheDocument();
   });
 
   it("clamps the last page's range to the true item count", () => {
-    render(<Pagination page={6} totalItems={137} onPageChange={() => {}} />);
-    expect(screen.getByText("Showing 126–137 of 137 members")).toBeInTheDocument();
+    // 137 items / 15 per page = 10 pages, last page holds 136-137.
+    render(<Pagination page={10} totalItems={137} onPageChange={() => {}} />);
+    expect(screen.getByText("Showing 136–137 of 137 members")).toBeInTheDocument();
   });
 
   it("disables Previous on the first page and Next on the last page", () => {
@@ -24,7 +25,7 @@ describe("Pagination", () => {
     expect(screen.getByText("Previous")).toBeDisabled();
     expect(screen.getByText("Next")).not.toBeDisabled();
 
-    rerender(<Pagination page={6} totalItems={137} onPageChange={() => {}} />);
+    rerender(<Pagination page={10} totalItems={137} onPageChange={() => {}} />);
     expect(screen.getByText("Previous")).not.toBeDisabled();
     expect(screen.getByText("Next")).toBeDisabled();
   });

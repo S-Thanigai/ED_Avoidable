@@ -1,28 +1,16 @@
-# ED Navigator Dashboard (React)
+# React + Vite
 
-React + TypeScript + Vite frontend for the Avoidable ED Utilization Navigator.
+This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
-## Develop
+Currently, two official plugins are available:
 
-```bash
-npm install
-npm run dev
-```
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-Runs on `http://localhost:5173` and calls the FastAPI backend directly. By
-default it targets `http://127.0.0.1:8001` — override with a `.env` file
-(see `.env.example`):
+## React Compiler
 
-```
-VITE_API_URL=http://127.0.0.1:8001
-```
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-## Build for production
+## Expanding the Oxlint configuration
 
-```bash
-npm run build
-```
-
-Outputs to `dist/`. The FastAPI backend (`backend/main.py`) serves this
-folder at `/dashboard` automatically once it exists — run the backend after
-building, or re-run `npm run build` after frontend changes to update it.
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.

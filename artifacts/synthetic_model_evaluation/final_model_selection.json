@@ -149,6 +149,6 @@
     "log_loss": 0.324678
   },
   "tie_break_applied": false,
-  "frozen_at_utc": "2026-08-16T12:52:09.195901+00:00",
+  "frozen_at_utc": "2026-08-16T16:46:32.061272+00:00",
   "note": "Frozen BEFORE any TEST data is loaded. Must not change based on TEST results. SYNTHETIC DATA -- DEMONSTRATION ONLY."
 }

@@ -22,7 +22,7 @@ describe("CurrentSafetyContextSection", () => {
       safety: { state: "CLEAR", context_completeness: "COMPLETE", context_source: "CALLER_SUPPLIED" },
     });
     render(<CurrentSafetyContextSection decision={decision} files={FILES} indexDate="2026-07-03" onEvaluated={() => {}} />);
-    expect(screen.getByText("Clear")).toBeInTheDocument();
+    expect(document.querySelector(".current-safety-context__state")).toHaveTextContent("Clear");
     expect(screen.getByText("Complete")).toBeInTheDocument();
     expect(screen.getByText("User/caller supplied")).toBeInTheDocument();
   });
@@ -30,14 +30,22 @@ describe("CurrentSafetyContextSection", () => {
   it("renders CAUTION status without implying safety", () => {
     const decision = makeDecision({ safety: { state: "CAUTION", context_completeness: "ABSENT", context_source: "NOT_AVAILABLE" } });
     render(<CurrentSafetyContextSection decision={decision} files={FILES} indexDate="2026-07-03" onEvaluated={() => {}} />);
-    expect(screen.getByText("Caution")).toBeInTheDocument();
+    expect(document.querySelector(".current-safety-context__state")).toHaveTextContent("Caution");
     expect(screen.queryByText(/no emergency detected/i)).not.toBeInTheDocument();
   });
 
   it("renders OVERRIDE status prominently", () => {
     const decision = makeDecision({ safety: { state: "OVERRIDE", override: true, context_completeness: "PARTIAL", context_source: "CALLER_SUPPLIED" } });
     render(<CurrentSafetyContextSection decision={decision} files={FILES} indexDate="2026-07-03" onEvaluated={() => {}} />);
-    expect(screen.getByText("Override")).toBeInTheDocument();
+    expect(document.querySelector(".current-safety-context__state")).toHaveTextContent("Override");
+  });
+
+  it("shows a concise, non-clinical legend describing all three possible outcomes", () => {
+    const decision = makeDecision({ safety: { state: "CLEAR", context_completeness: "COMPLETE", context_source: "CALLER_SUPPLIED" } });
+    render(<CurrentSafetyContextSection decision={decision} files={FILES} indexDate="2026-07-03" onEvaluated={() => {}} />);
+    expect(screen.getByText(/Complete current context with no override indicator/)).toBeInTheDocument();
+    expect(screen.getByText(/Current context is missing or incomplete/)).toBeInTheDocument();
+    expect(screen.getByText(/emergency\/high-acuity indicator/)).toBeInTheDocument();
   });
 
   it("calls decideUC07 for this member only and reports the updated decision, echoing submitted fields", async () => {

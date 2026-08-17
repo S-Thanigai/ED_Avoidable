@@ -2,25 +2,67 @@
   background: var(--surface-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  padding: 16px 20px;
+  padding: var(--space-5);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-4);
+}
+
+.why-flagged__heading-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.why-flagged__icon {
+  color: var(--explainability);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  flex-shrink: 0;
 }
 
 .why-flagged__heading {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--text-primary);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
 }
 
-.why-flagged__note {
-  margin: 0;
-  font-size: 0.82rem;
+.why-flagged__subtitle {
+  margin: 1px 0 0;
+  font-size: 0.8rem;
   color: var(--text-secondary);
+}
+
+.why-flagged__info {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--text-muted);
+  cursor: help;
+  border-radius: 50%;
+}
+.why-flagged__info:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.why-flagged__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.why-flagged__group-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.why-flagged__group-label--up {
+  color: var(--shap-increase);
+}
+.why-flagged__group-label--down {
+  color: var(--shap-decrease);
 }
 
 .why-flagged__list {
@@ -29,44 +71,83 @@
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
-.why-flagged__factor {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  font-size: 0.9rem;
-}
-
-.why-flagged__arrow {
-  font-weight: 700;
-  width: 1em;
-  text-align: center;
-}
-
-.why-flagged__factor--up .why-flagged__arrow {
-  color: var(--status-critical, #c0392b);
-}
-
-.why-flagged__factor--down .why-flagged__arrow {
-  color: var(--status-good, #2e7d32);
-}
-
-.why-flagged__label {
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.why-flagged__direction-text {
-  color: var(--text-secondary);
+.why-flagged__row {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(90px, 2fr) 64px;
+  align-items: center;
+  gap: var(--space-3);
   font-size: 0.85rem;
 }
 
+.why-flagged__row-label {
+  color: var(--text-primary);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Diverging bar: a centered zero-line track, with the fill extending
+   from center toward one side only (increasing -> right, decreasing ->
+   left) -- each factor's own bar occupies at most half the track width,
+   scaled relative to the largest |contribution| in this member's list. */
+.why-flagged__row-track {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+
+.why-flagged__row-zero {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--border-strong);
+}
+
+.why-flagged__row-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 999px;
+}
+.why-flagged__row-bar--up {
+  left: 50%;
+  background: var(--shap-increase);
+}
+.why-flagged__row-bar--down {
+  right: 50%;
+  background: var(--shap-decrease);
+}
+
+.why-flagged__row-value {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: right;
+}
+.why-flagged__row-value--up {
+  color: var(--shap-increase);
+}
+.why-flagged__row-value--down {
+  color: var(--shap-decrease);
+}
+
 .why-flagged__method {
-  margin: 4px 0 0;
+  margin: 0;
   font-size: 0.78rem;
   color: var(--text-muted);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+}
+.why-flagged__method-value {
+  color: var(--explainability);
+  font-weight: 600;
 }
 
 .why-flagged__caveat {
@@ -74,4 +155,14 @@
   font-size: 0.76rem;
   font-style: italic;
   color: var(--text-muted);
+}
+
+@media (max-width: 520px) {
+  .why-flagged__row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .why-flagged__row-value {
+    text-align: left;
+  }
 }

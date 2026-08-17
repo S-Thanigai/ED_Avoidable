@@ -9,7 +9,7 @@
 .uc07-results-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.88rem;
+  font-size: 0.87rem;
 }
 
 .uc07-results-table th,
@@ -20,22 +20,26 @@
   white-space: nowrap;
 }
 
-.uc07-results-table th {
+.uc07-results-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface-card);
   color: var(--text-secondary);
-  font-size: 0.76rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.03em;
   font-weight: 700;
-  padding: 0;
+  padding: 0 14px;
 }
 
 .uc07-results-table__sort-button {
   width: 100%;
   height: 100%;
-  padding: 10px 14px;
+  padding: 10px 0;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   background: none;
   border: none;
   color: inherit;
@@ -43,9 +47,14 @@
   text-transform: inherit;
   letter-spacing: inherit;
   cursor: pointer;
+  transition: color var(--transition-fast);
 }
 .uc07-results-table__sort-button:hover {
   color: var(--text-primary);
+}
+.uc07-results-table__sort-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 
 .uc07-results-table__sort-icon {
@@ -57,15 +66,18 @@
   font-weight: 700;
 }
 
+.uc07-results-table tbody tr {
+  transition: background var(--transition-fast);
+}
 .uc07-results-table tbody tr:hover {
   background: var(--surface-card-hover);
 }
 
 .uc07-results-table__row--selected {
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  background: var(--accent-bg);
 }
 .uc07-results-table__row--selected:hover {
-  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
 }
 
 .uc07-results-table__member-link {
@@ -80,6 +92,11 @@
 .uc07-results-table__member-link:hover {
   text-decoration: underline;
 }
+.uc07-results-table__member-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
 
 .uc07-results-table__details-button {
   background: none;
@@ -89,29 +106,96 @@
   color: var(--text-primary);
   font-size: 0.8rem;
   cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
 }
 .uc07-results-table__details-button:hover {
   background: var(--surface-sunken);
   border-color: var(--accent);
   color: var(--accent);
 }
+.uc07-results-table__details-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
 
-.uc07-results-table__tier {
+.uc07-results-table__tier,
+.uc07-results-table__safety {
+  display: inline-block;
   font-weight: 700;
-  font-size: 0.8rem;
-  padding: 2px 8px;
+  font-size: 0.76rem;
+  letter-spacing: 0.02em;
+  padding: 3px 9px;
   border-radius: 999px;
 }
 
 .uc07-results-table__tier--low {
-  color: var(--status-good);
-  background: var(--status-good-bg);
+  color: var(--risk-low);
+  background: var(--risk-low-bg);
 }
 .uc07-results-table__tier--moderate {
-  color: var(--status-warning);
-  background: var(--status-warning-bg);
+  color: var(--risk-moderate);
+  background: var(--risk-moderate-bg);
 }
 .uc07-results-table__tier--high {
-  color: var(--status-critical);
-  background: var(--status-critical-bg);
+  color: var(--risk-high);
+  background: var(--risk-high-bg);
+}
+
+.uc07-results-table__safety--clear {
+  color: var(--safety-clear);
+  background: var(--safety-clear-bg);
+}
+.uc07-results-table__safety--caution {
+  color: var(--safety-caution);
+  background: var(--safety-caution-bg);
+}
+.uc07-results-table__safety--override {
+  color: var(--safety-override);
+  background: var(--safety-override-bg);
+  font-weight: 800;
+}
+
+.uc07-results-table__prob {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.uc07-results-table__prob-value {
+  min-width: 3.6em;
+  font-variant-numeric: tabular-nums;
+}
+
+.uc07-results-table__prob-bar {
+  display: inline-block;
+  width: 48px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--surface-sunken);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.uc07-results-table__prob-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+}
+.uc07-results-table__prob-bar-fill--low {
+  background: var(--risk-low);
+}
+.uc07-results-table__prob-bar-fill--moderate {
+  background: var(--risk-moderate);
+}
+.uc07-results-table__prob-bar-fill--high {
+  background: var(--risk-high);
+}
+
+@media (max-width: 900px) {
+  .uc07-results-table__prob-bar {
+    display: none;
+  }
 }
