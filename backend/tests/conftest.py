@@ -36,8 +36,18 @@ for subdir in ("pit", "modeling", "agents"):
 # dependency on whatever is in backend/.env right now.
 for _key, _default in (
     ("GENAI_ENABLED", "false"),
+    ("GENAI_PROVIDER", "groq"),
     ("OLLAMA_BASE_URL", "http://127.0.0.1:11434"),
     ("OLLAMA_MODEL", "qwen3:8b"),
     ("GENAI_TIMEOUT_SECONDS", "20"),
+    # Deliberately pinned to blank, same reasoning as above: a developer's
+    # real backend/.env may have a real GROQ_API_KEY for their own manual
+    # testing against live Groq. Without this, that key would silently
+    # leak into the whole pytest session (since load_dotenv's
+    # override=False never overwrites a value already set here) and any
+    # test relying on "Groq is unconfigured, so it's skipped" would become
+    # non-deterministic depending on one developer's local machine state.
+    ("GROQ_API_KEY", ""),
+    ("GROQ_MODEL", "llama-3.3-70b-versatile"),
 ):
     os.environ.setdefault(_key, _default)

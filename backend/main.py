@@ -18,6 +18,7 @@ import asyncio
 import functools
 import io
 import json
+import logging
 import os
 import sys
 from concurrent.futures import ProcessPoolExecutor
@@ -163,6 +164,24 @@ def _parse_index_date(raw: str | None) -> date:
 # ---------------------------------------------------------------------------
 # App setup
 # ---------------------------------------------------------------------------
+
+# Privacy-safe GenAI provider observability (Phase 8C/8D + Groq
+# integration): genai_explanation.py itself performs no logging at all
+# (see its module docstring and tests/test_genai_privacy.py) -- it only
+# offers an `on_event` hook that fires with short, fixed event-name
+# strings ("groq_attempted", "groq_succeeded", "ollama_attempted",
+# "deterministic_fallback_used", etc). This logger is where those events
+# actually get written; it NEVER receives payload contents, raw model
+# output, or GROQ_API_KEY -- only that one static string per event, plus
+# the member-agnostic explanation_source/model_used already returned to
+# the caller. See POST /uc07/explain below for where this is used.
+#
+# logging.basicConfig is a no-op if the root logger already has a handler
+# (e.g. uvicorn's own), so this only ensures INFO-level messages are
+# actually emitted somewhere (stderr) when nothing else has configured
+# logging yet -- it never duplicates or overrides an existing setup.
+logging.basicConfig(level=logging.INFO)
+genai_logger = logging.getLogger("uc07.genai")
 
 app = FastAPI(
     title="ED Risk Prediction API",
@@ -803,7 +822,15 @@ def uc07_explain(request: ExplainRequest):
     a MemberExplanation (GenAI or DETERMINISTIC_FALLBACK); GenAI failure
     is never surfaced as an HTTP error here."""
     payload = request.model_dump()
-    result = genai_explanation.generate_explanation(payload)
+    events: list[str] = []
+    result = genai_explanation.generate_explanation(payload, on_event=events.append)
+    if events:
+        genai_logger.info("uc07.explain provider_events=%s", ",".join(events))
+    genai_logger.info(
+        "uc07.explain result explanation_source=%s model_used=%s",
+        result.explanation_source.value,
+        result.model_used,
+    )
     return JSONResponse({
         "summary": result.summary,
         "risk_explanation": result.risk_explanation,
