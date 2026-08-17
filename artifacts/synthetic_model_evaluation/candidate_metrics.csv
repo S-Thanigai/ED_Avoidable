@@ -1,5 +1,5 @@
 candidate,family,hyperparameters,roc_auc,pr_auc,brier_score,prevalence,pr_auc_no_skill_baseline,log_loss,threshold,n_selected,pct_selected,true_positives,false_positives,false_negatives,true_negatives,precision,recall,specificity,f1
 dummy_baseline,Dummy,strategy=prior,0.5,0.1174,0.103621,0.1174,0.1174,0.361732,0.5,0,0.0,0,0,1174,8826,0.0,0.0,1.0,0.0
 logistic_regression,LogisticRegression,"{""C"": 0.01, ""class_weight"": null}",0.699301,0.32877,0.09267,0.1174,0.1174,0.324678,0.5,187,0.0187,128,59,1046,8767,0.684492,0.109029,0.993315,0.188097
-random_forest,RandomForest,"{""max_depth"": 8, ""min_samples_leaf"": 20, ""class_weight"": null}",0.691328,0.316989,0.093736,0.1174,0.1174,0.327902,0.5,162,0.0162,112,50,1062,8776,0.691358,0.0954,0.994335,0.167665
+random_forest,RandomForest,"{""max_depth"": 8, ""min_samples_leaf"": 20, ""class_weight"": null}",0.691334,0.316955,0.093734,0.1174,0.1174,0.327898,0.5,162,0.0162,112,50,1062,8776,0.691358,0.0954,0.994335,0.167665
 hist_gradient_boosting,HistGradientBoosting,"{""max_iter"": 100, ""max_depth"": 3, ""learning_rate"": 0.05, ""class_weight"": ""balanced""}",0.691499,0.320253,0.203174,0.1174,0.1174,0.600441,0.5,2448,0.2448,598,1850,576,6976,0.244281,0.50937,0.790392,0.330204

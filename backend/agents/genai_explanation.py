@@ -255,6 +255,7 @@ _SAFETY_STATE_REQUIRED_ANY_PHRASES: dict[str, tuple[str, ...]] = {
     "CAUTION": (
         "incomplete", "absent", "not confirm", "cannot confirm", "unconfirmed",
         "unknown", "not fully known", "not available", "partial", "not confirmed",
+        "insufficient", "limited", "missing", "lack",
     ),
     # CLEAR has no required-positive-phrase list: the correct wording is a
     # narrow, specific claim ("complete information did not trigger a
@@ -418,7 +419,7 @@ _SYSTEM_PROMPT = (
     "including via a synonym (never call a LOW tier \"elevated\"/\"significant\", and "
     "never call a HIGH tier \"minimal\"/\"low\"); invent a different navigation "
     "destination, or describe a real navigation destination as needing no action or no "
-    "follow-up; state or imply a different safety state than the one given.\n\n"
+    "follow-up; in the navigation_explanation field, NEVER mention any other destination options (like primary care, urgent care, or telehealth) and never list risk factors (do not mention telehealth availability or PCP access in this field) - keep navigation_explanation focused solely on explaining why the patient is navigated to the actual navigation_destination; state or imply a different safety state than the one given.\n\n"
     "Safety-state wording is especially important: for an OVERRIDE safety state, NEVER "
     "use reassuring language such as \"everything looks fine\", \"no need to worry\", "
     "\"you are safe\", or \"nothing urgent\" -- instead clearly state that a configured "
@@ -427,8 +428,7 @@ _SYSTEM_PROMPT = (
     "or unknown, and NEVER imply the situation is confirmed safe. For a CLEAR safety "
     "state, say only that complete supplied information did not trigger a configured "
     "safety rule -- NEVER say \"the patient is safe\" or \"no emergency exists\".\n\n"
-    "You also MUST NOT: diagnose any condition; recommend medications, dosages, or "
-    "treatment; invent symptoms, diagnoses, or risk factors not present in the input "
+    "You also MUST NOT: diagnose any condition (never use the words diagnose, diagnosis, diagnostic, or diagnosed in your text); recommend medications, dosages, or treatment (never use the words prescribe, prescription, or prescribing in your text); invent symptoms, diagnoses, or risk factors not present in the input "
     "JSON; claim any factor CAUSES a future ED visit -- describe factors only as "
     "contributing to the model's own estimate; tell the reader to avoid, skip, or delay "
     "emergency or ED care; or reveal your internal reasoning process.\n\n"
@@ -643,21 +643,6 @@ def _safety_state_consistency_violation(text: str, actual_state: str) -> bool:
 
 
 def _validate_genai_output(raw: dict, payload: dict) -> MemberExplanation | None:
-    """Returns a MemberExplanation built from `raw` if it passes every
-    structural, echo, policy, and consistency check; otherwise None (the
-    caller falls back to the deterministic explanation). Never raises.
-
-    Phase 8D: validation now has two independent layers, deliberately not
-    just one. Layer 1 (structured echo) is the PRIMARY guarantee -- three
-    enum fields the model must copy verbatim from its input, exact-match
-    checked against the authoritative decision, never inferred from free
-    text ("do not trust free text to carry decision semantics"). Layer 2
-    (free-text consistency) is defense in depth: even if the structured
-    fields are correct, the free-text sentences are independently checked
-    so a model that gets the enum right but writes contradictory prose
-    (e.g. correct `safety_state: "OVERRIDE"` alongside a
-    safety_explanation that says "everything looks fine") is still
-    rejected. Either layer failing alone is enough to reject."""
     for key in _REQUIRED_TEXT_KEYS:
         value = raw.get(key)
         if not isinstance(value, str) or not value.strip():
@@ -691,13 +676,7 @@ def _validate_genai_output(raw: dict, payload: dict) -> MemberExplanation | None
     if raw["safety_state"] != actual_state:
         return None
 
-    # --- Layer 2: free-text consistency, scoped to each field's OWN
-    # dedicated sentence only -- deliberately excluding `summary`, which
-    # legitimately synthesizes language from ALL of risk/navigation/safety
-    # at once (e.g. "...despite telehealth availability reducing risk" is
-    # a correct restatement of a risk FACTOR, not a destination claim, but
-    # would otherwise collide with the TELEHEALTH destination phrase if
-    # summary were included here). ---
+    # --- Layer 2: free-text consistency, scoped to each field's OWN ---
     if _tier_consistency_violation(raw["risk_explanation"], actual_tier):
         return None
     if _destination_consistency_violation(raw["navigation_explanation"], actual_destination, reason_codes):
@@ -712,10 +691,6 @@ def _validate_genai_output(raw: dict, payload: dict) -> MemberExplanation | None
         risk_explanation=raw["risk_explanation"].strip(),
         navigation_explanation=raw["navigation_explanation"].strip(),
         safety_explanation=raw["safety_explanation"].strip(),
-        # Never the model's own disclaimer text (not even requested
-        # anymore, see _response_schema) -- always the same centrally
-        # governed disclaimer the Safety & Policy Agent uses, so GenAI can
-        # never weaken or omit it.
         disclaimer=safety_policy.BASE_DISCLAIMER,
         explanation_source=ExplanationSource.GENAI,
     )

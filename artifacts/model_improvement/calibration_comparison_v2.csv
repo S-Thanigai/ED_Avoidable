@@ -2,6 +2,6 @@ algorithm,calibration_method,roc_auc,pr_auc,brier_score,prevalence,pr_auc_no_ski
 logistic_regression,uncalibrated,0.57298,0.122098,0.086138,0.0958,0.0958,0.312864
 logistic_regression,sigmoid,0.571519,0.121961,0.086162,0.0958,0.0958,0.313018
 logistic_regression,isotonic,0.573804,0.122143,0.086117,0.0958,0.0958,0.312777
-random_forest,uncalibrated,0.572199,0.115722,0.086155,0.0958,0.0958,0.312656
-random_forest,sigmoid,0.570578,0.115196,0.086245,0.0958,0.0958,0.313299
-random_forest,isotonic,0.569873,0.115094,0.086143,0.0958,0.0958,0.312499
+random_forest,uncalibrated,0.572423,0.115754,0.086152,0.0958,0.0958,0.312635
+random_forest,sigmoid,0.570538,0.115206,0.086245,0.0958,0.0958,0.313301
+random_forest,isotonic,0.571724,0.115548,0.086126,0.0958,0.0958,0.312405

@@ -204,20 +204,20 @@
     "material_degradation_flag": false,
     "degradation_rule": "flag if pr_auc_delta < -0.03 or brier_delta > 0.01 (test worse than validation)"
   },
-  "python_version": "3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]",
+  "python_version": "3.13.5 (v3.13.5:6cb20a219a8, Jun 11 2025, 12:23:45) [Clang 16.0.0 (clang-1600.0.26.6)]",
   "sklearn_version": "1.7.2",
   "pandas_version": "3.0.5",
-  "numpy_version": "2.4.6",
-  "training_timestamp_utc": "2026-08-16T16:45:55.234496+00:00",
+  "numpy_version": "2.5.2",
+  "training_timestamp_utc": "2026-08-17T05:27:31.126114+00:00",
   "raw_dataset_sha256": {
     "raw_members.csv": "b94df89ed042a8feaa1bb46d7939e124fb9f6b03308b11da045412a427b78c46",
     "raw_ed_visits.csv": "f8db1839fb7966c4230c771252a3b935c318d0838de9258dc29de42d042f5d47",
     "raw_care_history.csv": "358d3033faa4e0529aed834cd8847f72d0b5d4ca51fa76748523fab790c81657"
   },
   "phase3_snapshot_sha256": {
-    "train": "1b6799904302398d95b478ca2a1e33d0b206fcc1983151b743f01cdbb7a534eb",
-    "validation": "a19dad00c4a8329074f7dcba94357506fd004ff7798c82d7d8b7313f13c9b70f",
-    "test": "1d4e8b22ede975cdad43379dd0566d38b597e270e8dbd1fcf3a1d85d8989ac1a"
+    "train": "5cc60ea885095600dd8fcdc4c965a296da52f6ad522cf9db5e028793b7a7eeee",
+    "validation": "6c0a670e4c97eadcf83f37a05d22fbcaf19d7a3f8cefa50941cff947c942daae",
+    "test": "e7892a97692a0cd759721d2ee0f98f239dcf2455d2efc6f8d7c25c973d691800"
   },
   "feature_manifest_reference": "data/derived/feature_manifest.json",
   "hgb_class_weight_supported_by_installed_sklearn": true,

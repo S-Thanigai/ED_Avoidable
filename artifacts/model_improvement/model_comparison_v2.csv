@@ -1,4 +1,4 @@
 algorithm,hyperparameters,roc_auc,pr_auc,brier_score,prevalence,pr_auc_no_skill_baseline,log_loss
 logistic_regression,"{""C"": 0.01, ""class_weight"": null}",0.57298,0.122098,0.086138,0.0958,0.0958,0.312864
-random_forest,"{""max_depth"": 8, ""min_samples_leaf"": 5, ""class_weight"": null}",0.572199,0.115722,0.086155,0.0958,0.0958,0.312656
+random_forest,"{""max_depth"": 8, ""min_samples_leaf"": 5, ""class_weight"": null}",0.572423,0.115754,0.086152,0.0958,0.0958,0.312635
 hist_gradient_boosting,"{""max_iter"": 100, ""max_depth"": 3, ""learning_rate"": 0.05, ""class_weight"": null}",0.571235,0.114672,0.08632,0.0958,0.0958,0.313585

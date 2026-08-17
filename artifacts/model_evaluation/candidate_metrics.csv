@@ -1,5 +1,5 @@
 candidate,family,hyperparameters,roc_auc,pr_auc,brier_score,prevalence,pr_auc_no_skill_baseline,log_loss,threshold,n_selected,pct_selected,true_positives,false_positives,false_negatives,true_negatives,precision,recall,specificity,f1
 dummy_baseline,Dummy,strategy=prior,0.5,0.0958,0.086652,0.0958,0.0958,0.31593,0.5,0,0.0,0,0,958,9042,0.0,0.0,1.0,0.0
 logistic_regression,LogisticRegression,"{""C"": 0.01, ""class_weight"": null}",0.572773,0.12198,0.086142,0.0958,0.0958,0.312874,0.5,0,0.0,0,0,958,9042,0.0,0.0,1.0,0.0
-random_forest,RandomForest,"{""max_depth"": 8, ""min_samples_leaf"": 5, ""class_weight"": null}",0.570876,0.114827,0.086178,0.0958,0.0958,0.312794,0.5,0,0.0,0,0,958,9042,0.0,0.0,1.0,0.0
+random_forest,RandomForest,"{""max_depth"": 8, ""min_samples_leaf"": 5, ""class_weight"": null}",0.5711,0.114918,0.086176,0.0958,0.0958,0.312784,0.5,0,0.0,0,0,958,9042,0.0,0.0,1.0,0.0
 hist_gradient_boosting,HistGradientBoosting,"{""max_iter"": 100, ""max_depth"": 3, ""learning_rate"": 0.05, ""class_weight"": ""balanced""}",0.570593,0.115733,0.233386,0.0958,0.0958,0.658533,0.5,4550,0.455,536,4014,422,5028,0.117802,0.559499,0.556072,0.194626
