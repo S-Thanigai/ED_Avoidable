@@ -132,7 +132,7 @@ DEFAULT_TIMEOUT_SECONDS = 20.0
 # currently valid/enabled for their own account. DEFAULT_GROQ_MODEL is
 # just a reasonable out-of-the-box default, not a guarantee.
 DEFAULT_GROQ_BASE_URL = "https://api.groq.com/openai/v1"
-DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile"
+DEFAULT_GROQ_MODEL = "openai/gpt-oss-120b"
 DEFAULT_GENAI_PROVIDER = "groq"
 _VALID_PROVIDERS = ("groq", "ollama")
 

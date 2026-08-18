@@ -16,9 +16,19 @@
 }
 
 .navigation-card__destination {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   font-size: 1.3rem;
   font-weight: 700;
   color: var(--text-primary);
+}
+
+.navigation-card__destination-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 999px;
+  flex-shrink: 0;
 }
 
 .navigation-card__explanation {

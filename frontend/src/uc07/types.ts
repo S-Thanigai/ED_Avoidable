@@ -192,3 +192,78 @@ export interface MemberExplanationResponse {
   model_used: string | null;
   generation_time_ms: number | null;
 }
+
+// ---- Phase 9 -- POST /uc07/report + POST /uc07/email (Member
+// Communication & Reporting). Same one-way principle as ExplainRequest
+// above: request bodies are built entirely FROM an already-computed
+// FinalUC07Decision (+ an already-approved MemberExplanationResponse,
+// if one has been fetched) plus member CONTACT fields the care manager
+// supplies -- never a new decision input. See
+// frontend/src/uc07/memberContacts.ts for where member/email comes
+// from (the member dataset itself has no email column).
+
+export interface ReportMemberInput {
+  member_id: string;
+  name?: string | null;
+  email?: string | null;
+  age?: number | null;
+  gender?: string | null;
+}
+
+export interface ReportRiskInput {
+  probability: number;
+  tier: RiskTier;
+  model_version: string;
+  factors: Array<{ display_name: string; direction: FactorDirection }>;
+}
+
+export interface ReportNavigationInput {
+  destination: NavigationDestination | null;
+  reason_codes: ReasonCode[];
+}
+
+export interface ReportSafetyInput {
+  state: SafetyState;
+  context_completeness: ContextCompleteness;
+  context_source: ContextSource;
+  message: string;
+}
+
+export interface ReportExplanationInput {
+  summary: string;
+  risk_explanation: string;
+  navigation_explanation: string;
+  safety_explanation: string;
+  disclaimer: string;
+  explanation_source: ExplanationSource;
+  model_used: string | null;
+}
+
+export interface ReportRequestPayload {
+  member: ReportMemberInput;
+  risk: ReportRiskInput;
+  navigation: ReportNavigationInput;
+  safety: ReportSafetyInput;
+  synthetic_model: boolean;
+  dataset_id?: string | null;
+  /** If omitted, the backend renders the report using its own
+   * deterministic fallback explanation -- it never calls a fresh LLM
+   * just to build a PDF/email (see backend/main.py's
+   * `_resolve_report_explanation`). */
+  explanation?: ReportExplanationInput | null;
+}
+
+export interface EmailSendRequestPayload {
+  report: ReportRequestPayload;
+  to_email: string;
+  subject: string;
+  body: string;
+}
+
+export interface EmailSendResponse {
+  sent: boolean;
+  provider: string;
+  message: string;
+  error_code: string | null;
+  report_id: string;
+}

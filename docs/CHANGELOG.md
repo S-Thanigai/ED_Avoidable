@@ -1269,3 +1269,517 @@ production pass.
 hardening, GenAI deployment strategy off localhost, and (optionally)
 migrating `@app.on_event` to FastAPI lifespan handlers. STOPPED per
 instruction; Docker/Azure not started.
+
+## Phase 9 — Member Communication & Reporting (PDF Report + Email) — 2026-08-17
+
+Adds an operational communication/reporting layer on top of the
+existing UC07 decision system: "Download PDF Report" and "Send to
+Member" in the member details workspace. Consumes an already-computed
+`FinalUC07Decision` (+ an already-approved explanation, if one has been
+fetched) — it never creates, changes, or influences a risk/navigation/
+safety decision. See `docs/09_MEMBER_COMMUNICATION_REPORTING.md`.
+
+- PDF ("Member Care Navigation & Risk Summary") rendered server-side
+  with ReportLab: A4, header/footer with page numbers/report ID/
+  timestamp, semantic color-coded sections, human-readable model
+  factors only (never a raw feature slug), multi-page support. For an
+  OVERRIDE safety state, the Safety section moves ahead of the Risk
+  section and is visually flagged priority; the risk score is never
+  suppressed, only made secondary.
+- `POST /uc07/report` (returns `application/pdf`) and `POST /uc07/email`
+  (always 200, `{sent, provider, message, error_code, report_id}`) share
+  ONE rendering call (`main.py`'s `_build_report_context`) so the
+  downloaded and emailed reports are always the same document.
+- No new LLM call for reports: reuses an already-fetched
+  `/uc07/explain` result if the frontend has one cached, otherwise
+  builds the same deterministic fallback `genai_explanation.py` always
+  produces, with GenAI forced off for that one call (zero network
+  calls either way).
+- Email: `backend/services/email_service.py`, provider-abstracted
+  (`EmailProvider` ABC, `SmtpEmailProvider` implemented; a future Azure
+  provider can be added without changing the public API). Header/
+  newline-injection rejected before any network call; every failure
+  path (disabled, unconfigured, auth, timeout, network, provider error)
+  returns a safe, generic result — never a credential, never a raw
+  SMTP exception/stack trace.
+- Member email/name: confirmed by inspection that `raw_members.csv` has
+  no such columns. Added `frontend/src/uc07/memberContacts.ts`, a
+  `localStorage`-only `member_id -> {name, email}` map — never sent to
+  `/uc07/decide`, never an ML feature. The composer's recipient field is
+  always editable (there is no trusted/verified contact source to make
+  it read-only against).
+- Audit trail: structured logging only (`backend/services/audit.py`,
+  logger `uc07.communication.audit`) — no database in this prototype
+  (documented as a production follow-up, not implemented).
+- `GET /health` extended with `email_configured`/`email_provider`
+  (never credentials).
+
+**Files created:**
+- `backend/services/__init__.py`, `report_service.py`,
+  `email_service.py`, `audit.py`.
+- `backend/tests/test_report_service.py` (20 tests),
+  `test_email_service.py` (20 tests, `smtplib.SMTP` always mocked),
+  `test_uc07_communication_api.py` (15 HTTP-level tests).
+- `frontend/src/uc07/memberContacts.ts`.
+- `frontend/src/uc07/components/MemberReportActions.{tsx,css}`,
+  `EmailComposerModal.{tsx,css}`.
+- `frontend/src/uc07/__tests__/MemberReportActions.test.tsx` (5 tests),
+  `EmailComposerModal.test.tsx` (14 tests).
+- `docs/09_MEMBER_COMMUNICATION_REPORTING.md`.
+
+**Files modified:**
+- `backend/main.py` — new `ReportRequest`/`EmailSendRequest` Pydantic
+  schemas, `POST /uc07/report`, `POST /uc07/email`, `/health` extension.
+  `/uc07/decide`, `/uc07/explain`, and every existing endpoint's
+  behavior: unchanged.
+- `backend/requirements.txt` (+`reportlab`),
+  `backend/requirements-dev.txt` (+`pypdf`, test-only).
+- `backend/.env.example`, `backend/.env` — `EMAIL_*`/`SMTP_*` variables
+  (disabled by default; no real credentials filled in).
+- `backend/tests/conftest.py` — pinned `EMAIL_*`/`SMTP_*` test defaults
+  (same reasoning as the existing `GENAI_*`/`GROQ_*` pins — a
+  developer's real `backend/.env` must never leak into the test
+  session).
+- `frontend/src/uc07/types.ts`, `api.ts` — added
+  `ReportRequestPayload`/`EmailSendRequestPayload` types and
+  `buildReportRequest`/`fetchMemberReportPdf`/`sendMemberReportEmail`.
+  Every existing exported type/function: unchanged.
+- `frontend/src/uc07/components/MemberDetailsDrawer.tsx` — renders
+  `MemberReportActions` in the header, next to the close button.
+- `frontend/src/test/setup.ts` — stubs `URL.createObjectURL`/
+  `revokeObjectURL`/`window.open` (jsdom does not implement them; the
+  new PDF download/preview flow needs them).
+
+**Model/risk thresholds/SHAP/Risk Agent/Navigation Agent/Safety
+Agent/GenAI decision authority/`/uc07/decide` behavior/training
+datasets/model artifacts: NONE changed.** Verified: `backend/services/
+report_service.py` and `email_service.py` import neither
+`risk_detection`, `care_navigation`, `safety_policy`, `orchestrator`,
+nor `model_explainability` (asserted directly by
+`test_no_model_decision_authority_imports`); `POST /uc07/email`'s
+response body carries no risk/navigation/safety field at all.
+
+**Automated tests:** backend 700 collected, 699 passing (the same 1
+known, pre-existing, order-dependent hash-flake exception already
+documented at `docs/DECISION_LOG.md` #118 — unrelated to this phase,
+confirmed by re-running it in isolation); frontend 135/135 passing
+(118 pre-existing + 17 new). `tsc -b` and `oxlint`: clean (only
+pre-existing, unrelated warnings in legacy `.jsx` files).
+
+**Live verification:** a real `POST /uc07/decide` call against the dev
+backend, followed by a real `POST /uc07/report` (200,
+`application/pdf`, correct `Content-Disposition`, correct CORS header
+for the Vite dev origin) and `POST /uc07/email` (200,
+`EMAIL_DISABLED` — the safe default with no SMTP configured) —
+end-to-end through the actual running server, not just `TestClient`.
+No real email was sent (no SMTP credentials were provided; email
+sending was verified via mocked-SMTP tests instead — see
+`docs/DECISION_LOG.md` #121). Browser tools were unavailable this
+session, so the composer's visual/interaction behavior was verified via
+jsdom + Testing Library component tests (17 tests covering prefill,
+validation, two-step confirmation, success/failure states, preview,
+and keyboard accessibility) rather than a manual click-through; the dev
+servers were left running (backend :8000, frontend :5175) for manual
+visual confirmation.
+
+**Remaining non-blocking issues:** no server-side persisted-decision
+store, so `/uc07/report`/`/uc07/email` trust the frontend's echoed
+decision the same way `/uc07/explain` already does (documented, not a
+regression); audit trail is process logging only, no database; Azure
+email provider not started (per instruction).
+
+**Next phase:** Docker + production configuration/security hardening
+(carried over from Phase 8D, still not started), and — only if
+requested — an Azure `EmailProvider` implementation. STOPPED per
+instruction.
+
+## Phase 9.1 -- SMTP Reliability Fix (TIMEOUT/PROVIDER_ERROR investigation) -- 2026-08-17
+
+Investigated intermittent `EMAIL_FAILED result=TIMEOUT` / `result=PROVIDER_ERROR`
+against real Gmail SMTP, plus emails occasionally landing in Spam. Fixed
+genuine reliability/observability gaps in `backend/services/email_service.py`
+without touching the model, agents, GenAI provider chain, datasets, or the
+API's response contract. See `docs/09_MEMBER_COMMUNICATION_REPORTING.md`
+section 8a.
+
+- **Root cause of TIMEOUT/PROVIDER_ERROR:** not a missing/wrong timeout
+  (`EMAIL_TIMEOUT_SECONDS` was already correctly bounding every SMTP
+  stage via `smtplib`'s own socket-timeout semantics, confirmed from
+  CPython source) -- it was that every kind of failure collapsed into
+  one generic bucket with no indication of WHERE in the SMTP
+  conversation (connect/EHLO/STARTTLS/AUTH/send) or WHAT kind of
+  failure it was.
+- `SmtpEmailProvider.send()` rewritten to run connect/ehlo/starttls/
+  (post-TLS)ehlo/authenticate/send as individually-caught stages, each
+  categorized into a specific `SmtpStageError` (`TIMEOUT`,
+  `CONNECTION_FAILED`, `TLS_FAILED`, `AUTH_FAILED`, `SENDER_REJECTED`,
+  `RECIPIENT_REJECTED`, `MESSAGE_REJECTED`, `RATE_LIMITED` (SMTP 421),
+  `PROVIDER_TEMPORARY_ERROR` (4xx), `PROVIDER_PERMANENT_ERROR` (5xx),
+  `UNKNOWN_PROVIDER_ERROR`), using Python's actual `smtplib` exception
+  hierarchy plus the server's numeric response code where one exists.
+- Confirmed the 587/STARTTLS flow was already correct (`smtplib.SMTP` +
+  `.starttls()`, never `SMTP_SSL`'s port-465 semantics) and added the
+  RFC 3207-required second `ehlo()` explicitly, immediately after
+  STARTTLS, rather than relying on it happening implicitly inside
+  `login()`.
+- Bounded, targeted retry: at most 1 additional attempt, only for
+  failures that PROVE the message was not accepted (any pre-"send"-
+  stage transient failure, or an explicit 4xx/rate-limit response
+  received during send). A `TIMEOUT`/`CONNECTION_FAILED` that happens
+  DURING the send stage is deliberately never retried -- the client
+  cannot tell if the server already queued the message, so retrying
+  there risks a duplicate email. Documented as a known limitation
+  rather than solved with a full idempotency mechanism (out of scope).
+- Connection cleanup hardened: `smtp.quit()` in a `finally` block,
+  falling back to `smtp.close()` if `quit()` itself fails -- a failed
+  send can no longer leave a stale connection for the next request.
+- Safe, stage-attributed logging added (`uc07.communication.email`
+  logger): `stage=`, `result=`, `smtp_code=`, `attempt=`,
+  `connection_ms=`/`send_ms=` on success. Never the password, raw
+  provider response text, report content, or email body -- verified by
+  dedicated tests.
+- Deliverability hygiene: added explicit `Date` and `Message-ID`
+  headers (smtplib does not add either automatically); confirmed the
+  message body stays plain-text-only with a single professionally-named
+  attachment and a matching `From` display name/address. Documented,
+  explicitly, that Primary Inbox placement can never be guaranteed by
+  application code -- the durable fix is a transactional provider on an
+  authenticated domain (SPF/DKIM/DMARC), noted as future work.
+- **Verified, not assumed, that POST /uc07/email does not block the
+  event loop:** `POST /uc07/report`/`POST /uc07/email` are plain `def`
+  handlers, so Starlette's automatic `run_in_threadpool` already keeps
+  blocking SMTP I/O off the main asyncio event loop -- proven with a
+  new concurrency test (a mocked 1.5s-slow SMTP send does not delay a
+  concurrent `GET /health`), not just asserted from the code shape.
+- **API response contract deliberately UNCHANGED:** `POST /uc07/email`
+  still always returns HTTP 200 with `{sent, provider, message,
+  error_code, report_id}` -- this already IS the "explicit structured
+  status" the investigation's own spec recommended as the fallback if
+  changing HTTP status codes wasn't worth the compatibility risk; the
+  frontend already branches on `result.sent`/`.message`, not the HTTP
+  status, so no frontend change was needed or made.
+
+**Files created:** `backend/tests/test_uc07_email_concurrency.py`.
+
+**Files modified:** `backend/services/email_service.py` (staged
+execution, categorization, retry, safe logging, Date/Message-ID
+headers -- `EmailService`'s public API/constructor signature
+unchanged); `backend/main.py` (`uc07_email` -- added
+`report_generation_ms` timing + a safe result-summary log line; no
+behavioral/contract change); `backend/tests/test_email_service.py`
+(rewritten -- provider-layer categorization tests + service-layer
+retry/validation tests, replacing the old single-layer mocks that are
+no longer representative of the real code path);
+`backend/tests/test_uc07_communication_api.py` (+4 tests: OVERRIDE
+wording preserved through the email path, `/uc07/decide` unaffected,
+no leaked SMTP internals); `backend/.env.example` (expanded
+`EMAIL_TIMEOUT_SECONDS` guidance); `docs/09_MEMBER_COMMUNICATION_REPORTING.md`.
+
+**Model/SHAP/Risk Agent/Navigation Agent/Safety Agent/GenAI/datasets/
+feature engineering: NONE changed.** This phase touched only
+`backend/services/email_service.py`, `backend/main.py`'s `uc07_email`
+handler body (timing/logging only), and tests/docs.
+
+**Automated tests:** backend Phase 9 suite 87/87 passing (19 report +
+51 email + 16 communication-API + 1 concurrency; up from 50 before this
+pass); full backend regression (excluding retraining self-tests, which
+are unrelated and were not re-run to avoid unnecessary artifact churn)
+618/618 passing, no new failures. Frontend: unchanged, still 135/135
+(this pass touched no frontend files).
+
+**Manual verification:** the user filled in real Gmail SMTP credentials
+(`smtp.gmail.com:587`, STARTTLS, an App Password) in their own
+`backend/.env` and confirmed `GET /health` reports
+`email_configured: true`. No real email was sent as part of this
+investigation (per instruction -- "I will perform the manual send");
+manual test commands are provided directly to the user instead.
+
+**Remaining non-blocking issues:** no idempotency/duplicate-send
+protection for the documented ambiguous-timeout case (Section 8a); no
+guarantee of Primary Inbox placement (inherent to any application, not
+fixable here); Azure email provider not started (per instruction).
+
+**Next phase:** Docker + production configuration/security hardening
+(carried over from Phase 8D/9, still not started), and -- only if
+requested -- an Azure `EmailProvider` implementation. STOPPED per
+instruction.
+
+## Phase 9.2 -- STARTTLS Diagnosability Fix (stage=starttls result=UNKNOWN_PROVIDER_ERROR) -- 2026-08-17
+
+Follow-up to Phase 9.1: a repeated `smtp_send stage=starttls
+result=UNKNOWN_PROVIDER_ERROR` was reported against real Gmail. PDF
+generation was already confirmed unaffected; the failure is strictly
+pre-authentication. Root cause could not be reproduced directly (no
+real email was sent by the assistant, per instruction), so this pass
+fixes the DIAGNOSTIC GAP that made the failure unclassifiable, rather
+than guessing at a specific fix. See
+`docs/09_MEMBER_COMMUNICATION_REPORTING.md` section 8a.
+
+- `SmtpStageError` gained an `exception_type` field -- the raised
+  exception's CLASS NAME ONLY (never its message/args) -- populated on
+  EVERY path through `_categorize_smtp_exception()`, including the
+  final catch-all. A failure the fixed `error_code` taxonomy can't
+  distinguish further is no longer a dead end: `exc_type=` is now in
+  the safe `smtp_send` log line alongside `stage=`/`result=`/
+  `smtp_code=`.
+- `ssl.SSLCertVerificationError` (a subclass of `ssl.SSLError`) is now
+  checked explicitly, before the generic TLS branch, with its own
+  message ("Could not verify the email server's TLS certificate.").
+  `ConnectionResetError`/`BrokenPipeError` are now named explicitly
+  too (same `CONNECTION_FAILED` outcome as the generic `OSError`
+  branch, just no longer incidental).
+- **TLS certificate verification was explicitly NOT weakened**:
+  `ssl.create_default_context()` is still called with zero arguments
+  (verified by spying on the real function, not mocking it away) and
+  the context actually handed to `starttls()` is asserted to still
+  have `verify_mode == CERT_REQUIRED` and `check_hostname is True`. A
+  new regression guard test fails if `CERT_NONE`/`check_hostname=False`/
+  an unverified context is ever introduced.
+- Confirmed (unchanged from Phase 9.1) the Gmail flow itself is
+  correct: `smtplib.SMTP("smtp.gmail.com", 587)` → `EHLO` →
+  `STARTTLS` with the default secure context → `EHLO` again → `login`
+  → `send_message`.
+
+**Files modified:** `backend/services/email_service.py` (`exception_type`
+field + tagging on every categorization path, no behavioral/API change
+to `EmailSendResult` or the retry policy), `backend/tests/test_email_service.py`
+(+9 tests: certificate verification failure, `SMTPNotSupportedError`
+during STARTTLS, connection reset, timeout, unrecognized-exception
+tagging, exc_type in log line, TLS-never-weakened guards),
+`docs/09_MEMBER_COMMUNICATION_REPORTING.md`.
+
+**Model/agents/report generation: NONE changed**, per explicit
+instruction -- this pass touched only `email_service.py`'s exception
+categorization and its tests.
+
+**Automated tests:** `test_email_service.py` 59/59 passing (up from
+51); full Phase 9 suite 95/95; no regressions elsewhere (not re-run in
+full this pass -- no code outside `email_service.py`/its own tests was
+touched).
+
+**Outcome:** diagnostic-only, as instructed -- the actual STARTTLS
+failure was NOT reproduced or fixed here (no real send was attempted).
+The next real send attempt's `exc_type=` value in the log will name
+the true exception class directly; see the assistant's response for
+the exact safe line to report back.
+
+**Next phase:** unchanged from Phase 9.1 -- Docker/production hardening
+and, if requested, Azure `EmailProvider`. STOPPED per instruction
+(diagnosis only, no redesign).
+
+## Phase 9.3 -- STARTTLS Regression Fix (root cause: constructor vs. deferred connect()) -- 2026-08-17
+
+Root-caused the 100%-reproducible `stage=starttls
+result=UNKNOWN_PROVIDER_ERROR` reported against real Gmail. Confirmed
+DIRECTLY against `smtp.gmail.com:587` (connect/EHLO/STARTTLS/EHLO only
+-- login and send were stubbed out, no real email was sent). See
+`docs/09_MEMBER_COMMUNICATION_REPORTING.md` section 8a,
+`docs/DECISION_LOG.md` #127.
+
+**Root cause:** Phase 9.1's staged-connect rewrite constructed
+`smtplib.SMTP(timeout=...)` with NO host (to make "connect" its own
+catchable/timeable stage), then called `smtp.connect(host, port)`
+separately. `smtplib.SMTP.__init__` is the ONLY place that sets the
+instance's internal `self._host`; a separate `connect()` call
+establishes the socket but never writes the host back to that
+attribute. `starttls()` reads `self._host` to pass as `server_hostname`
+to `ssl.SSLContext.wrap_socket()` for TLS SNI/hostname verification --
+with it stuck at `''`, `wrap_socket()` raised a plain
+`ValueError("check_hostname requires server_hostname")`, which matched
+none of the categorizer's `smtplib`/`ssl`/`socket`/`OSError` branches
+and fell through to `UNKNOWN_PROVIDER_ERROR` every single time.
+
+**Exact fix (smallest change, no redesign):**
+`backend/services/email_service.py`'s `SmtpEmailProvider` gained a
+`_connect()` helper that constructs `smtplib.SMTP(host, port,
+timeout=...)` with host/port passed DIRECTLY to the constructor --
+exactly matching the original, pre-hardening implementation -- while
+still keeping "connect" as its own individually-categorized stage (any
+exception during construction, including the connect it performs
+internally, is still tagged `stage="connect"`). Nothing else in the
+staged flow changed: EHLO -> STARTTLS (unmodified default,
+verification-enabled `ssl.create_default_context()`) -> EHLO again ->
+LOGIN -> SEND, still individually attributed/categorized/logged,
+still with the same retry policy and connection cleanup as Phase 9.1/
+9.2.
+
+**TLS certificate verification was not touched/weakened** -- confirmed
+by a spy-based test asserting `ssl.create_default_context()` is still
+called with zero arguments and the context actually handed to
+`starttls()` still has `verify_mode == CERT_REQUIRED` and
+`check_hostname is True`.
+
+**Files modified:** `backend/services/email_service.py`
+(`SmtpEmailProvider._connect()` added; `send()`'s first two lines
+changed from constructing bare + calling `.connect()` to calling
+`self._connect()`; nothing else in the class changed),
+`backend/tests/test_email_service.py` (6 tests updated to assert the
+constructor now receives `(host, port, timeout=...)` and to simulate a
+connect-stage failure via the constructor's `side_effect` instead of a
+now-unused `instance.connect` mock; +1 new test asserting the exact
+required call order end-to-end: EHLO -> STARTTLS -> EHLO -> LOGIN ->
+SEND), `docs/09_MEMBER_COMMUNICATION_REPORTING.md`.
+
+**Model/SHAP/agents/report generation/GenAI/frontend/datasets: NONE
+changed**, per explicit instruction.
+
+**Automated tests:** `test_email_service.py` 60/60 passing (up from
+59); full Phase 9 suite 96/96 passing.
+
+**Live verification:** a real connect->EHLO->STARTTLS->EHLO handshake
+against `smtp.gmail.com:587`, through the actual fixed
+`SmtpEmailProvider.send()` code path, succeeded (login/send_message
+were monkeypatched to no-ops for this check only -- no real
+authentication attempt, no real email sent, per instruction).
+
+**Next phase:** unchanged -- Docker/production hardening, and, if
+requested, an Azure `EmailProvider`. STOPPED per instruction (fix
+STARTTLS only, no further redesign).
+
+## Phase 10 -- Frontend UX Audit & Targeted Redesign Pass -- 2026-08-17
+
+Audited the entire active UC07 frontend (App.tsx's "UC07 Navigator" tab
+and everything under frontend/src/uc07/) against a full healthcare-
+product redesign brief. Finding: the existing design system (tokens.css),
+component architecture, cross-filtering, 15-member pagination, member
+workspace, SHAP/AI-explanation sections, and safety-override handling
+were ALREADY built to a high standard (systematic semantic color
+tokens for risk/safety/navigation/SHAP/GenAI, working chart<->filter
+cross-filtering, accessible tabs with focus trapping, a professional
+AI-explanation identity that never outranks the decision). Rather than
+a risky ground-up rewrite of a sound architecture (and without browser/
+screenshot tooling available this session to visually verify a larger
+change), this pass fixed concrete, verified gaps instead:
+
+- **Navigation destination color consistency**: the population chart
+  already colored destinations via `--nav-*` tokens, but the member
+  workspace's Navigation card and the results table's Navigation
+  column showed plain text. Extracted the single shared mapping
+  (`frontend/src/uc07/navigationDisplay.ts`) and applied it in all
+  three places (color dot + label, never color alone).
+- **Population KPIs expanded** (Section 14's suggested list): added
+  Moderate Risk, Navigation Opportunities, and Safety Caution counts
+  alongside the existing Total/High Risk/Safety Override.
+- **Communication moved into its own workspace tab**: "Download PDF
+  Report"/"Send to Member" were two small buttons wedged into the
+  member workspace header; moved into a proper "Communication" tab
+  (5th tab, matching the spec's explicit tab list) with a heading,
+  description, and two labeled action cards (Section 23-25), reusing
+  the exact same request-building/report/email logic unchanged.
+- **Header accent**: a restrained 3px brand-gradient top line (Section
+  5/10) -- deliberately not a full gradient header, to keep clinical
+  text on a plain, high-contrast surface.
+
+**Files created:** `frontend/src/uc07/navigationDisplay.ts`.
+
+**Files modified:** `AnalyticsCharts.tsx` (now imports the shared nav
+color/label map instead of its own copy), `NavigationCard.{tsx,css}`,
+`Uc07ResultsTable.{tsx,css}`, `PopulationSummary.{tsx,css}`,
+`MemberDetailsDrawer.tsx` (Communication tab), `MemberReportActions.
+{tsx,css}` (redesigned as a full tab-panel section rather than a
+compact header strip), `Header.css`; test files updated to match
+(`PopulationSummary.test.tsx`, `Uc07DecisionPanel.test.tsx`,
+`MemberReportActions.test.tsx` rewritten, `MemberDetailsDrawer.test.tsx`
++1 test for the new tab).
+
+**Backend/model/agents/report-PDF-generation/email-sending logic:
+NONE changed** -- this was a frontend presentation pass only; every
+value displayed still comes unmodified from the existing API contracts.
+
+**Automated tests:** frontend 136/136 passing (135 pre-existing/updated
++ 1 new). `tsc -b`: clean. `oxlint`: clean (same pre-existing warnings
+in unrelated legacy `.jsx` files only). Production build: succeeds.
+
+**Not attempted this pass (documented, not silently skipped):** a
+literal pixel-level pass across all ~40 component stylesheets (spacing/
+shadow/gradient tuning at 1440/1024/768/390px in both themes) --
+without browser/screenshot tooling this session, claiming a completed
+visual pass would not be honest; the existing design tokens and
+responsive patterns (already present throughout) were judged sound
+enough not to risk a blind rewrite. A left-sidebar shell was
+deliberately NOT introduced -- the app is fundamentally one continuous
+analysis flow (upload -> results -> table, not separate pages), and
+the brief's own Section 9 caveat ("do not create fake routes... only
+where it improves the existing architecture") argues against inventing
+one.
+
+**Next phase:** none requested. STOPPED per instruction (no Docker/
+Azure/deployment).
+
+## Phase 10.1 -- Frontend Visual Identity Overhaul -- 2026-08-17
+
+Follow-up to Phase 10: the prior pass was judged too conservative
+("already mature", mostly unchanged). This pass makes a genuinely
+visible transformation rather than another audit, per explicit
+instruction, while keeping every backend contract, model/agent/SHAP/
+GenAI/PDF/email behavior, and existing test guarantee (15/page
+pagination, cross-filtering, AI-explanation caching) untouched.
+
+- **Full palette rewrite** (`tokens.css`, same token NAMES, new
+  VALUES): page background shifted from a warm neutral off-white to a
+  cool blue-gray; primary blue deepened/saturated to a healthcare azure
+  (`--accent`); a new secondary teal token (`--teal`) and a deep navy
+  brand token (`--navy`) added; `--nav-urgent-care` corrected from cyan
+  to orange (the spec's own stated mapping, previously not applied);
+  SHAP increase/decrease shifted to a clearer warm-coral/cool-blue pair;
+  a new `--gradient-header` (navy -> blue -> teal) brand sweep added.
+  Dark theme mirrored with a navy-black (not neutral-black) elevation
+  ladder. Because nearly every component already consumed these tokens
+  rather than hard-coded colors, this one file cascades a materially
+  different look across the entire application.
+- **Header redesigned**: new mark/wordmark ("UC07 Navigator" + "Care
+  Management Intelligence" tagline), a 3px navy->blue->teal brand
+  accent bar, and a live API-status pill wired to the real `GET
+  /health` endpoint (polls every 60s) -- not a decorative static label.
+- **Population KPIs**: 6 tiles (was 3), each with its own icon badge
+  and category-colored top edge and hover elevation.
+- **Chart cards**: each of the 4 analytics cards (Risk/Navigation/
+  Safety/Probability) now has a colored icon badge and matching top
+  accent so they read as distinct categories, not identical gray boxes.
+- **Navigation destination identity**: unified color+label everywhere
+  (results table, member workspace NavigationCard, population chart)
+  via a new shared `navigationDisplay.ts` module.
+- **"Member Prioritization"** section: renamed from "Members", with a
+  descriptive subtitle; filter toolbar restyled to pill-shaped
+  controls with a search icon and a focus ring.
+- **Results table**: sticky header darkened/strengthened, Safety
+  OVERRIDE badge gained an explicit warning-triangle icon (icon + label
+  + color, not color alone).
+- **Member workspace**: widened from ~62vw to ~68vw (clamp 680-1180px)
+  per the updated spec; header gained the same brand accent bar as the
+  app header.
+- **Communication tab**: emoji icons replaced with the app's consistent
+  stroke-SVG icon language; action cards gained hover elevation.
+- **Email composer**: button flow renamed to match the spec exactly
+  (`Review & Send` -> a persistent "Confirm Send" screen showing
+  Recipient/Attachment -> `Back`/`Send Email`) -- the confirm screen now
+  stays visible through the actual send (previously it silently
+  reverted to the pre-confirm layout once sending started).
+- **Safety status icon** (member workspace SafetyCard) and Member
+  Communication action icons converted from emoji to the same
+  stroke-SVG icon language used everywhere else in the app.
+
+**Files created:** none new this pass (navigationDisplay.ts was created
+in Phase 10).
+
+**Files modified:** `tokens.css`, `Header.{tsx,css}`,
+`PopulationSummary.{tsx,css}`, `AnalyticsCharts.{tsx,css}`,
+`MemberFilters.{tsx,css}`, `Uc07ResultsTable.{tsx,css}`,
+`MemberDetailsDrawer.css`, `MemberReportActions.{tsx,css}`,
+`EmailComposerModal.{tsx,css}`, `SafetyCard.{tsx,css}`; test files
+updated to match (`EmailComposerModal.test.tsx` -- button label
+renames only, same assertions/coverage).
+
+**Backend/model/agents/SHAP/GenAI/PDF/email logic: NONE changed.**
+
+**Automated tests:** frontend 136/136 passing. `tsc -b`: clean.
+`oxlint`: clean (same pre-existing warnings in unrelated legacy files
+only). Production build: succeeds.
+
+**Not verified visually this pass either** (no browser/screenshot
+tooling available this session) -- changes were designed and reasoned
+about via the token cascade and component structure, then verified by
+type-check/tests/build only. Documented explicitly rather than
+overclaiming a visual QA pass that did not happen.
+
+**Next phase:** none requested. STOPPED per instruction.

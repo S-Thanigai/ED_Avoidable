@@ -22,7 +22,10 @@ describe("PopulationSummary", () => {
 
     expect(screen.getByText("3", { selector: ".population-summary__kpi-value" })).toBeInTheDocument();
     const kpis = screen.getAllByText(/^\d+$/, { selector: ".population-summary__kpi-value" }).map((el) => el.textContent);
-    expect(kpis).toEqual(["3", "2", "1"]); // Total / High Risk / Override
+    // Total / High Risk / Moderate Risk / Navigation Opportunities / Safety Caution / Safety Override.
+    // None of the three fixtures override `navigation`, so all default to
+    // NO_PROACTIVE_NAVIGATION (fixtures.ts) -- Navigation Opportunities is 0.
+    expect(kpis).toEqual(["3", "2", "0", "0", "1", "1"]);
   });
 
   it("never claims a clinical outcome or diagnosis", () => {

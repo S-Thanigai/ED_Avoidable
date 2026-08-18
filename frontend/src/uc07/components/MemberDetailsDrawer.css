@@ -18,9 +18,9 @@
 }
 
 /* Desktop: a large analytical workspace, not a narrow drawer -- roughly
-   55-65% of the viewport, clamped to sensible min/max widths. */
+   65-72% of the viewport, clamped to sensible min/max widths. */
 .member-workspace {
-  width: clamp(640px, 62vw, 1080px);
+  width: clamp(680px, 68vw, 1180px);
   max-width: 100%;
   height: 100%;
   background: var(--surface-page);
@@ -49,6 +49,7 @@
 }
 
 .member-workspace__header {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--space-5);
@@ -56,6 +57,16 @@
   background: var(--surface-elevated);
   border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
+}
+
+.member-workspace__header::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--gradient-header);
 }
 
 .member-workspace__identity {

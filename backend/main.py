@@ -21,6 +21,7 @@ import json
 import logging
 import os
 import sys
+import time
 from concurrent.futures import ProcessPoolExecutor
 from datetime import date, datetime
 from pathlib import Path
@@ -84,6 +85,10 @@ from risk_detection import ModelIncompatibleError  # noqa: E402
 from safety_context_csv import SafetyContextCsvValidationError, parse_safety_context_csv  # noqa: E402
 from safety_context_schema import SafetyContextPayload  # noqa: E402
 from pydantic import ValidationError  # noqa: E402
+
+from services import report_service  # noqa: E402
+from services.audit import record_communication_event  # noqa: E402
+from services.email_service import EmailService, load_email_config, mask_email  # noqa: E402
 
 _uc07_orchestrator: UC07Orchestrator | None = None
 _uc07_orchestrator_error: str | None = None
@@ -182,6 +187,12 @@ def _parse_index_date(raw: str | None) -> date:
 # logging yet -- it never duplicates or overrides an existing setup.
 logging.basicConfig(level=logging.INFO)
 genai_logger = logging.getLogger("uc07.genai")
+# Phase 9 -- safe timing/result observability for POST /uc07/email, at
+# the level this handler itself measures (report generation). SMTP
+# stage-level timing/errors are logged separately by
+# backend/services/email_service.py's own "uc07.communication.email"
+# logger, closer to where they actually happen.
+comm_logger = logging.getLogger("uc07.communication")
 
 app = FastAPI(
     title="ED Risk Prediction API",
@@ -335,12 +346,16 @@ def health():
         uc07_ready = False
         uc07_error = exc.detail
         uc07_model_version = None
+    email_config = load_email_config()
     return {
         "status": "ok",
         "model_loaded": model_ready,
         "uc07_model_loaded": uc07_ready,
         "uc07_model_version": uc07_model_version,
         "uc07_model_error": uc07_error,
+        # Phase 9 -- safe configuration status only; never credentials.
+        "email_configured": email_config.configured,
+        "email_provider": email_config.provider,
     }
 
 
@@ -840,4 +855,271 @@ def uc07_explain(request: ExplainRequest):
         "explanation_source": result.explanation_source.value,
         "model_used": result.model_used,
         "generation_time_ms": result.generation_time_ms,
+    })
+
+
+# ---------------------------------------------------------------------------
+# Phase 9 -- Member Communication & Reporting: PDF report + email.
+#
+# Same strict input boundary as POST /uc07/explain above: these
+# endpoints accept ONLY an already-computed decision summary (the same
+# risk/navigation/safety shape ExplainRequest uses, reused here via
+# subclassing) plus member contact fields and an already-approved
+# explanation. Neither endpoint uploads/parses a CSV, looks up a member,
+# or calls UC07Orchestrator/RiskDetectionAgent/care_navigation/
+# safety_policy.decide() -- backend/services/report_service.py and
+# email_service.py are pure renderer/transport layers with zero
+# decision authority (see their module docstrings). This is an
+# operational communication/reporting layer that CONSUMES the final
+# decision; it does not create one.
+# ---------------------------------------------------------------------------
+
+
+class ReportMemberPayload(BaseModel):
+    """Contact/profile fields for the PDF report and email recipient.
+    `email` is NEVER an ML feature and is never read by any agent --
+    the member dataset (raw_members.csv) has no email column at all
+    (confirmed by inspection); this is purely a communication-layer
+    field the care manager supplies from a trusted contact source or
+    types in directly (see frontend/src/uc07/memberContacts.ts)."""
+    member_id: str = Field(min_length=1, max_length=64)
+    name: str | None = Field(default=None, max_length=200)
+    email: str | None = Field(default=None, max_length=254)
+    age: int | None = Field(default=None, ge=0, le=130)
+    gender: str | None = Field(default=None, max_length=50)
+
+
+class ReportSafetyPayload(ExplainSafetyPayload):
+    """Same fields as ExplainSafetyPayload plus `message` -- the exact,
+    already-produced SafetyDecision.message text the frontend already
+    displays in SafetyCard, reused verbatim here rather than
+    re-deriving safety wording in a second place."""
+    message: str = Field(min_length=1, max_length=2000)
+
+
+class ReportExplanationPayload(BaseModel):
+    summary: str
+    risk_explanation: str
+    navigation_explanation: str
+    safety_explanation: str
+    disclaimer: str
+    explanation_source: Literal["GENAI", "DETERMINISTIC_FALLBACK"]
+    model_used: str | None = None
+
+
+class ReportRequest(BaseModel):
+    member: ReportMemberPayload
+    risk: ExplainRiskPayload
+    navigation: ExplainNavigationPayload
+    safety: ReportSafetyPayload
+    synthetic_model: bool
+    dataset_id: str | None = None
+    # If omitted, the report is built with the deterministic fallback
+    # explanation (see _resolve_report_explanation) -- never a fresh
+    # GenAI call. If given, it MUST be an explanation this app already
+    # obtained from POST /uc07/explain (GenAI-validated or
+    # deterministic); this endpoint does not re-validate its text
+    # against safety_policy, matching the trust model already
+    # established for MemberExplanation once it leaves that endpoint.
+    explanation: ReportExplanationPayload | None = None
+
+
+def _resolve_report_explanation(request: ReportRequest) -> ReportExplanationPayload:
+    """Section 4-G / Section 14: never calls a NEW LLM solely for PDF or
+    email generation. If the caller already has an approved explanation
+    (from a prior POST /uc07/explain call), it is reused as-is.
+    Otherwise this builds the SAME deterministic, template-based
+    explanation genai_explanation.py always falls back to, with
+    GENAI_ENABLED forced off for this one call -- so no network/LLM call
+    is ever made from this code path."""
+    if request.explanation is not None:
+        return request.explanation
+
+    payload = {
+        "risk": {
+            "probability": request.risk.probability,
+            "tier": request.risk.tier,
+            "model_version": request.risk.model_version,
+            "factors": [f.model_dump() for f in request.risk.factors],
+        },
+        "navigation": {
+            "destination": request.navigation.destination,
+            "reason_codes": request.navigation.reason_codes,
+        },
+        "safety": {
+            "state": request.safety.state,
+            "context_completeness": request.safety.context_completeness,
+            "context_source": request.safety.context_source,
+        },
+        "synthetic_model": request.synthetic_model,
+    }
+    forced_deterministic_config = genai_explanation.GenAIConfig()
+    forced_deterministic_config.enabled = False
+    result = genai_explanation.generate_explanation(payload, config=forced_deterministic_config)
+    return ReportExplanationPayload(
+        summary=result.summary,
+        risk_explanation=result.risk_explanation,
+        navigation_explanation=result.navigation_explanation,
+        safety_explanation=result.safety_explanation,
+        disclaimer=result.disclaimer,
+        explanation_source=result.explanation_source.value,
+        model_used=result.model_used,
+    )
+
+
+def _build_report_context(request: ReportRequest) -> report_service.ReportContext:
+    """The ONE place a ReportRequest is turned into a report_service.
+    ReportContext -- used identically by both POST /uc07/report and
+    POST /uc07/email, so the downloaded PDF and the emailed attachment
+    are always produced by the exact same rendering call (Section 15)."""
+    explanation = _resolve_report_explanation(request)
+    return report_service.ReportContext(
+        member_id=request.member.member_id,
+        member_name=request.member.name,
+        member_email=request.member.email,
+        member_age=request.member.age,
+        member_gender=request.member.gender,
+        risk_probability=request.risk.probability,
+        risk_tier=request.risk.tier,
+        model_version=request.risk.model_version,
+        synthetic_model=request.synthetic_model,
+        dataset_id=request.dataset_id,
+        navigation_destination=request.navigation.destination,
+        navigation_reason_codes=list(request.navigation.reason_codes),
+        factors=[
+            report_service.ReportFactor(display_name=f.display_name, direction=f.direction)
+            for f in request.risk.factors
+        ],
+        safety_state=request.safety.state,
+        safety_message=request.safety.message,
+        context_completeness=request.safety.context_completeness,
+        context_source=request.safety.context_source,
+        explanation_summary=explanation.summary,
+        explanation_risk=explanation.risk_explanation,
+        explanation_navigation=explanation.navigation_explanation,
+        explanation_safety=explanation.safety_explanation,
+        explanation_disclaimer=explanation.disclaimer,
+        explanation_source=explanation.explanation_source,
+        explanation_model_used=explanation.model_used,
+    )
+
+
+@app.post(
+    "/uc07/report",
+    summary="Generate the Member Care Navigation & Risk Summary PDF report",
+    tags=["Communication"],
+)
+def uc07_report(request: ReportRequest):
+    """Renders and returns the PDF report for one member as
+    application/pdf. Pure rendering over already-computed decision data
+    (see module comment above) -- no CSV upload, no model inference, no
+    email sent. Same rendering call POST /uc07/email uses for its
+    attachment (Section 15)."""
+    ctx = _build_report_context(request)
+    pdf_bytes = report_service.generate_report_pdf(ctx)
+    filename = report_service.build_report_filename(request.member.member_id)
+
+    record_communication_event(
+        action="PDF_GENERATED",
+        member_id=request.member.member_id,
+        report_id=ctx.report_id,
+    )
+
+    return StreamingResponse(
+        io.BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+class EmailSendRequest(BaseModel):
+    report: ReportRequest
+    to_email: str = Field(min_length=3, max_length=254)
+    subject: str = Field(min_length=1, max_length=200)
+    body: str = Field(min_length=1, max_length=10000)
+
+
+@app.post(
+    "/uc07/email",
+    summary="Email the Member Care Navigation & Risk Summary PDF report to the member",
+    tags=["Communication"],
+)
+def uc07_email(request: EmailSendRequest):
+    """Builds the SAME PDF POST /uc07/report would return (Section 15,
+    16) and sends it as an attachment via the configured EmailProvider.
+    Always returns HTTP 200 with a structured {sent, message,
+    error_code} body -- matching this codebase's existing convention
+    (POST /uc07/explain never surfaces a GenAI failure as an HTTP
+    error) -- so a disabled/misconfigured/unreachable email provider is
+    reported cleanly to the caller instead of as a 5xx. NEVER returns an
+    SMTP stack trace or credential; NEVER changes a risk/navigation/
+    safety value (this endpoint has no access to the decision agents at
+    all -- see module comment above).
+
+    Section 10 (Phase 9 SMTP reliability pass) -- this response shape
+    was deliberately KEPT as-is rather than switched to per-failure HTTP
+    status codes (e.g. 504 for a timeout): it already IS the "explicit
+    structured status" fallback the spec asks for (`sent`/`error_code`/
+    `message`, not just a bare 200), the frontend (EmailComposerModal.tsx)
+    already branches on `result.sent`/`result.message` rather than the
+    HTTP status, and changing status codes now would be an unforced
+    contract break for no behavioral gain.
+
+    Section 8 -- this is a plain `def` (not `async def`) handler, same
+    as POST /uc07/report above: FastAPI/Starlette automatically runs a
+    synchronous route function in its own worker thread
+    (`starlette.concurrency.run_in_threadpool`, applied by the framework
+    itself for any non-async endpoint), so the blocking SMTP I/O inside
+    `EmailService.send_report_email()` does NOT run on -- and cannot
+    starve -- the main asyncio event loop. Verified live: a concurrent
+    GET /health kept responding immediately while a POST /uc07/email
+    call was blocked for several seconds against an unreachable SMTP
+    host. No `ProcessPoolExecutor` is needed here (unlike the legacy
+    `/predict` SHAP path, docs/08D_CRITICAL_FIXES.md §5) -- SMTP is
+    ordinary blocking network I/O, which a thread handles correctly
+    (it releases the GIL while waiting on the socket), not CPU-bound
+    work that holds the GIL."""
+    report_start = time.monotonic()
+    ctx = _build_report_context(request.report)
+    pdf_bytes = report_service.generate_report_pdf(ctx)
+    report_generation_ms = (time.monotonic() - report_start) * 1000
+    filename = report_service.build_report_filename(request.report.member.member_id)
+
+    service = EmailService()
+    result = service.send_report_email(
+        to_email=request.to_email,
+        subject=request.subject,
+        body=request.body,
+        attachment_bytes=pdf_bytes,
+        attachment_filename=filename,
+    )
+
+    # Safe timing only (Section 12) -- never report/email content. SMTP
+    # connection/send timings are logged separately, at the point they
+    # are actually measured, by email_service.py's own "smtp_send" line.
+    comm_logger.info(
+        "uc07.email report_generation_ms=%.1f result=%s error_code=%s",
+        report_generation_ms, "SENT" if result.sent else "FAILED", result.error_code,
+    )
+
+    try:
+        masked_recipient = mask_email(request.to_email)
+    except Exception:
+        masked_recipient = "***"
+
+    record_communication_event(
+        action="EMAIL_SENT" if result.sent else "EMAIL_FAILED",
+        member_id=request.report.member.member_id,
+        report_id=ctx.report_id,
+        masked_recipient=masked_recipient,
+        provider=result.provider,
+        result_status="OK" if result.sent else (result.error_code or "FAILED"),
+    )
+
+    return JSONResponse({
+        "sent": result.sent,
+        "provider": result.provider,
+        "message": result.message,
+        "error_code": result.error_code,
+        "report_id": ctx.report_id,
     })

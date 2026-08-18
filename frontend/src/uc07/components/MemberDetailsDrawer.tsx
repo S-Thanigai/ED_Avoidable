@@ -10,25 +10,21 @@ import { MemberDataSections } from "./MemberDataSections";
 import { CurrentSafetyContextSection } from "./CurrentSafetyContextSection";
 import { AiExplanationSection } from "./AiExplanationSection";
 import { SyntheticDisclosure } from "./SyntheticDisclosure";
+import { MemberReportActions } from "./MemberReportActions";
+import { NAVIGATION_DESTINATION_LABEL } from "../navigationDisplay";
 import "./MemberDetailsDrawer.css";
 
 const TIER_LABEL: Record<FinalUC07Decision["risk"]["tier"], string> = { LOW: "Low", MODERATE: "Moderate", HIGH: "High" };
 const SAFETY_LABEL: Record<FinalUC07Decision["safety"]["state"], string> = { CLEAR: "Clear", CAUTION: "Caution", OVERRIDE: "Override" };
-const DEST_LABEL: Record<string, string> = {
-  PRIMARY_CARE: "Primary Care",
-  URGENT_CARE: "Urgent Care",
-  TELEHEALTH: "Telehealth",
-  CARE_MANAGEMENT: "Care Management",
-  NO_PROACTIVE_NAVIGATION: "No proactive navigation",
-};
 
-type TabKey = "overview" | "why-flagged" | "ai-explanation" | "current-safety";
+type TabKey = "overview" | "why-flagged" | "ai-explanation" | "current-safety" | "communication";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "overview", label: "Overview" },
   { key: "why-flagged", label: "Why Flagged" },
   { key: "ai-explanation", label: "AI Explanation" },
   { key: "current-safety", label: "Current Safety" },
+  { key: "communication", label: "Communication" },
 ];
 
 const FOCUSABLE_SELECTOR =
@@ -100,7 +96,9 @@ export function MemberDetailsDrawer({
   }, [onClose]);
 
   const { risk, navigation, safety } = decision;
-  const destinationLabel = navigation.destination ? DEST_LABEL[navigation.destination] ?? navigation.destination : "None (override)";
+  const destinationLabel = navigation.destination
+    ? NAVIGATION_DESTINATION_LABEL[navigation.destination] ?? navigation.destination
+    : "None (override)";
 
   return (
     <div className="member-workspace__overlay" onClick={onClose}>
@@ -226,6 +224,16 @@ export function MemberDetailsDrawer({
               indexDate={indexDate}
               onEvaluated={onSafetyEvaluated}
             />
+          </div>
+
+          <div
+            role="tabpanel"
+            id="member-workspace-panel-communication"
+            aria-labelledby="member-workspace-tab-communication"
+            hidden={activeTab !== "communication"}
+            className="member-workspace__panel"
+          >
+            <MemberReportActions decision={decision} lookups={lookups} />
           </div>
         </div>
       </aside>

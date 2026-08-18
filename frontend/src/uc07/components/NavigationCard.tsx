@@ -1,14 +1,7 @@
 import { useState } from "react";
 import type { FinalNavigationView, SafetyState } from "../types";
+import { NAVIGATION_DESTINATION_COLOR, NAVIGATION_DESTINATION_LABEL } from "../navigationDisplay";
 import "./NavigationCard.css";
-
-const DESTINATION_LABEL: Record<string, string> = {
-  PRIMARY_CARE: "Primary Care",
-  URGENT_CARE: "Urgent Care",
-  TELEHEALTH: "Telehealth",
-  CARE_MANAGEMENT: "Care Management",
-  NO_PROACTIVE_NAVIGATION: "No proactive navigation recommended",
-};
 
 const REASON_LABEL: Record<string, string> = {
   ELEVATED_FUTURE_RISK: "Elevated predicted future risk",
@@ -51,7 +44,14 @@ export function NavigationCard({
       ) : (
         <>
           <span className="navigation-card__destination">
-            {navigation.destination ? DESTINATION_LABEL[navigation.destination] ?? navigation.destination : "—"}
+            {navigation.destination && (
+              <span
+                className="navigation-card__destination-dot"
+                aria-hidden="true"
+                style={{ background: NAVIGATION_DESTINATION_COLOR[navigation.destination] }}
+              />
+            )}
+            {navigation.destination ? NAVIGATION_DESTINATION_LABEL[navigation.destination] ?? navigation.destination : "—"}
           </span>
           <p className="navigation-card__explanation">{navigation.explanation}</p>
 
