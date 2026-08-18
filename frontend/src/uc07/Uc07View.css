@@ -4,14 +4,6 @@
   gap: var(--space-5);
 }
 
-.uc07-view__intro {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  flex-wrap: wrap;
-}
-
 .uc07-view__data-inputs {
   display: flex;
   flex-direction: column;

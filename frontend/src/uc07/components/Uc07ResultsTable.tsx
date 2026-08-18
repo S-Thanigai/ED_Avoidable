@@ -49,7 +49,7 @@ export function Uc07ResultsTable({
   return (
     <div className="uc07-results-table__wrap">
       <table className="uc07-results-table">
-        <caption className="sr-only">UC07 decisions by member</caption>
+        <caption className="sr-only">ED Navigator decisions by member</caption>
         <thead>
           <tr>
             {SORTABLE_COLUMNS.map((col) => (

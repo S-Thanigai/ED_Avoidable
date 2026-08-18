@@ -2,7 +2,6 @@ import type { FinalUC07Decision } from "../types";
 import { RiskCard } from "./RiskCard";
 import { SafetyCard } from "./SafetyCard";
 import { NavigationCard } from "./NavigationCard";
-import { SyntheticDisclosure } from "./SyntheticDisclosure";
 import { WhyFlaggedSection } from "./WhyFlaggedSection";
 import "./Uc07DecisionPanel.css";
 
@@ -20,7 +19,6 @@ export function Uc07DecisionPanel({ decision }: { decision: FinalUC07Decision })
       <SafetyCard safety={decision.safety} />
       <NavigationCard navigation={decision.navigation} safetyState={decision.safety.state} />
       <div className="uc07-decision-panel__footer">
-        <SyntheticDisclosure modelVersion={decision.risk.model_version} />
         <p className="uc07-decision-panel__disclaimer">{decision.disclaimer}</p>
       </div>
     </div>

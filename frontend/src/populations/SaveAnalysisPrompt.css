@@ -1,0 +1,110 @@
+.save-analysis-prompt {
+  margin: 1rem 0;
+  padding: 1.25rem;
+  border-radius: var(--radius-md, 12px);
+  border: 1px solid var(--border);
+  background: var(--surface-card);
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.save-analysis-prompt__header h3 {
+  margin: 0 0 0.3rem;
+  font-size: 1.05rem;
+  color: var(--text-primary);
+}
+
+.save-analysis-prompt__header p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.save-analysis-prompt__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  max-width: 26rem;
+}
+
+.save-analysis-prompt__field input {
+  padding: 0.55rem 0.7rem;
+  border-radius: var(--radius-sm, 8px);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-page);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.save-analysis-prompt__error {
+  background: var(--status-critical-bg);
+  color: var(--status-critical);
+  border: 1px solid var(--status-critical);
+  border-radius: var(--radius-sm, 8px);
+  padding: 0.5rem 0.7rem;
+  font-size: 0.82rem;
+}
+
+.save-analysis-prompt__actions {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.save-analysis-prompt__primary,
+.save-analysis-prompt__secondary {
+  padding: 0.55rem 1rem;
+  border-radius: var(--radius-sm, 8px);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.save-analysis-prompt__primary {
+  border: none;
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+
+.save-analysis-prompt__primary:hover:not(:disabled) {
+  background: var(--accent-strong);
+}
+
+.save-analysis-prompt__secondary {
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.save-analysis-prompt__primary:disabled,
+.save-analysis-prompt__secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.save-analysis-prompt--success {
+  flex-direction: row;
+  align-items: center;
+  background: var(--status-good-bg);
+  border-color: var(--status-good);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.save-analysis-prompt__icon {
+  color: var(--status-good);
+  font-size: 1.2rem;
+}
+
+.save-analysis-prompt__dismiss {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.85rem;
+  text-decoration: underline;
+}

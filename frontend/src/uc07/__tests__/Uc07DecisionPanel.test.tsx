@@ -122,12 +122,12 @@ describe("Uc07DecisionPanel -- context completeness rendering", () => {
   });
 });
 
-describe("Uc07DecisionPanel -- disclosure", () => {
-  it("shows synthetic disclosure and model version", () => {
+describe("Uc07DecisionPanel -- demo/synthetic disclosure removed", () => {
+  it("does not render the demo/synthetic-data disclosure or 'About this model'", () => {
     render(<Uc07DecisionPanel decision={makeDecision({ risk: { model_version: "uc07-risk-synthetic-v1" } })} />);
-    expect(screen.getByText(/trained on synthetic data/i)).toBeInTheDocument();
-    // model version legitimately appears twice (RiskCard footnote + synthetic disclosure) -- assert at least one, not exactly one
-    expect(screen.getAllByText(/uc07-risk-synthetic-v1/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/trained on synthetic data/i)).not.toBeInTheDocument();
+    expect(screen.queryByText("Demo")).not.toBeInTheDocument();
+    expect(screen.queryByText("About this model")).not.toBeInTheDocument();
   });
 });
 
