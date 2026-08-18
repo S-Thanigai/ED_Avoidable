@@ -48,7 +48,19 @@ def test_app_boots_and_root_works(client):
 
 
 def test_legacy_predict_endpoints_still_registered(client):
-    paths = {route.path for route in main.app.routes}
+    # Azure SQL persistence phase: backend/main.py now also
+    # app.include_router()s backend/routers/auth.py and
+    # backend/routers/populations.py. In the installed FastAPI version,
+    # include_router() appends an internal `_IncludedRouter` wrapper to
+    # app.routes rather than flattening it into plain APIRoute objects
+    # -- that wrapper has no `.path` attribute, so the old
+    # `{route.path for route in main.app.routes}` introspection raises
+    # AttributeError before it ever gets to the legacy routes. The
+    # OpenAPI schema is the version-agnostic source of truth for "which
+    # paths are actually registered" (FastAPI must resolve every router,
+    # nested or not, to build it) -- verified equivalent to a live
+    # request resolving successfully.
+    paths = set(client.get("/openapi.json").json()["paths"].keys())
     assert "/predict" in paths
     assert "/predict-json" in paths
     assert "/explain-member" in paths

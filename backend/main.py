@@ -17,13 +17,11 @@ Endpoint:
 import asyncio
 import functools
 import io
-import json
 import logging
 import os
 import sys
 import time
 from concurrent.futures import ProcessPoolExecutor
-from datetime import date, datetime
 from pathlib import Path
 from typing import Literal
 
@@ -70,7 +68,6 @@ for _subdir in ("pit", "agents"):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from contracts import CurrentSafetyContext  # noqa: E402
 from input_validation import (  # noqa: E402
     EdVisitDataValidationError,
     MemberDataValidationError,
@@ -83,88 +80,28 @@ from risk_detection import DEFAULT_ARTIFACT_PATH as UC07_ARTIFACT_PATH  # noqa: 
 from risk_detection import DEFAULT_METADATA_PATH as UC07_METADATA_PATH  # noqa: E402
 from risk_detection import ModelIncompatibleError  # noqa: E402
 from safety_context_csv import SafetyContextCsvValidationError, parse_safety_context_csv  # noqa: E402
-from safety_context_schema import SafetyContextPayload  # noqa: E402
-from pydantic import ValidationError  # noqa: E402
 
 from services import report_service  # noqa: E402
 from services.audit import record_communication_event  # noqa: E402
 from services.email_service import EmailService, load_email_config, mask_email  # noqa: E402
 
-_uc07_orchestrator: UC07Orchestrator | None = None
-_uc07_orchestrator_error: str | None = None
-
-
-def _get_uc07_orchestrator() -> UC07Orchestrator:
-    """Lazily construct and cache the orchestrator. Mirrors the legacy
-    endpoints' lazy MODEL_PATH check -- the app can still start even if
-    the UC07 model artifact is temporarily missing/incompatible; the
-    failure surfaces as a clean 503 on first use, not a startup crash."""
-    global _uc07_orchestrator, _uc07_orchestrator_error
-    if _uc07_orchestrator is not None:
-        return _uc07_orchestrator
-    try:
-        _uc07_orchestrator = UC07Orchestrator()
-        _uc07_orchestrator_error = None
-        return _uc07_orchestrator
-    except ModelIncompatibleError as exc:
-        _uc07_orchestrator_error = str(exc)
-        raise HTTPException(status_code=503, detail=f"UC07 risk model unavailable: {exc}") from exc
-
-
-UC07_MEMBERS_REQUIRED = [
-    # num_chronic_conditions is deliberately NOT required here: Phase 7
-    # (docs/07_DISPARITY_INPUT_SAFETY_HARDENING.md section 12) derives it
-    # safely from diabetes+copd+hypertension+chf+asthma+ckd when a caller
-    # omits it, rather than requiring a redundant client-supplied value;
-    # validate_and_normalize_members_df() enforces consistency when it
-    # IS supplied.
-    "member_id", "age", "gender", "diabetes", "copd", "hypertension", "chf", "asthma", "ckd",
-    "transportation_barrier", "telehealth_available",
-    "pcp_distance_miles", "urgent_care_distance_miles",
-]
-UC07_ED_REQUIRED = [
-    "member_id", "visit_date", "diagnosis", "triage_level", "admitted", "icu", "major_procedure", "cost", "red_flag",
-]
-UC07_CARE_REQUIRED = ["member_id", "visit_date", "care_type"]
-
-
-def _parse_current_safety_context(raw: str | None) -> dict[str, CurrentSafetyContext]:
-    """Parses the optional `current_safety_context` JSON form field:
-    {"<member_id>": {"red_flag":0|1,"icu":0|1,"admitted":0|1,"major_procedure":0|1,"triage_level":1-5}, ...}
-    A member absent from this mapping is treated as having NO current
-    safety context supplied at all (CAUTION), never as CLEAR -- schema
-    validation (backend/agents/safety_context_schema.py) never invents a
-    default of 0 for a field the caller omitted for a given member; it
-    only fills in defaults within an ENTRY the caller did provide, field
-    by field. Business validation logic lives in that module, not here."""
-    if not raw:
-        return {}
-    try:
-        payload = json.loads(raw)
-    except json.JSONDecodeError as exc:
-        raise HTTPException(status_code=422, detail=f"current_safety_context is not valid JSON: {exc}") from exc
-
-    try:
-        validated = SafetyContextPayload.model_validate(payload)
-    except ValidationError as exc:
-        raise HTTPException(status_code=422, detail=f"current_safety_context is invalid: {exc.errors()}") from exc
-
-    return {
-        member_id: CurrentSafetyContext(
-            red_flag=entry.red_flag, icu=entry.icu, admitted=entry.admitted,
-            major_procedure=entry.major_procedure, triage_level=entry.triage_level,
-        )
-        for member_id, entry in validated.root.items()
-    }
-
-
-def _parse_index_date(raw: str | None) -> date:
-    if not raw:
-        return datetime.now().date()
-    try:
-        return date.fromisoformat(raw)
-    except ValueError as exc:
-        raise HTTPException(status_code=422, detail=f"index_date must be an ISO date (YYYY-MM-DD): {exc}") from exc
+# UC07_MEMBERS_REQUIRED/UC07_ED_REQUIRED/UC07_CARE_REQUIRED, the lazy
+# orchestrator singleton, and the current_safety_context/index_date
+# parsers now live in backend/uc07_pipeline.py -- a pure extraction (same
+# bodies, unchanged) so that POST /populations/save-analysis
+# (backend/routers/populations.py) can call through the exact same
+# validation + orchestrator path as this endpoint, rather than
+# duplicating it. Imported here under their original names so every
+# reference below is unchanged.
+from uc07_pipeline import (  # noqa: E402
+    UC07_CARE_REQUIRED,
+    UC07_ED_REQUIRED,
+    UC07_MEMBERS_REQUIRED,
+    get_uc07_orchestrator as _get_uc07_orchestrator,
+    parse_current_safety_context as _parse_current_safety_context,
+    parse_index_date as _parse_index_date,
+)
+from db import engine as db_engine  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # App setup
@@ -222,7 +159,19 @@ app.add_middleware(
     allow_origins=CORS_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
+    # Required for the browser to send/receive the HttpOnly session
+    # cookie (backend/auth.py) on cross-origin requests from the Vite
+    # dev server. Safe only because CORS_ORIGINS is an explicit
+    # allow-list above, never "*" -- allow_credentials with a wildcard
+    # origin is rejected by browsers anyway.
+    allow_credentials=True,
 )
+
+from routers.auth import router as _auth_router  # noqa: E402
+from routers.populations import router as _populations_router  # noqa: E402
+
+app.include_router(_auth_router)
+app.include_router(_populations_router)
 
 # ---------------------------------------------------------------------------
 # Phase 8D Part 7 -- legacy /predict concurrency fix.
@@ -356,6 +305,12 @@ def health():
         # Phase 9 -- safe configuration status only; never credentials.
         "email_configured": email_config.configured,
         "email_provider": email_config.provider,
+        # Azure SQL persistence -- configuration presence + a cheap
+        # pooled `SELECT 1` (db/engine.py's check_connection(), never
+        # raises). Never the connection string/credentials.
+        "database_configured": db_engine.is_configured(),
+        "database_provider": "azure_sql",
+        "database_connected": db_engine.check_connection() if db_engine.is_configured() else False,
     }
 
 

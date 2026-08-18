@@ -9,7 +9,6 @@ import { WhyFlaggedSection } from "./WhyFlaggedSection";
 import { MemberDataSections } from "./MemberDataSections";
 import { CurrentSafetyContextSection } from "./CurrentSafetyContextSection";
 import { AiExplanationSection } from "./AiExplanationSection";
-import { SyntheticDisclosure } from "./SyntheticDisclosure";
 import { MemberReportActions } from "./MemberReportActions";
 import { NAVIGATION_DESTINATION_LABEL } from "../navigationDisplay";
 import "./MemberDetailsDrawer.css";
@@ -186,7 +185,6 @@ export function MemberDetailsDrawer({
             </div>
             <MemberDataSections memberId={decision.member_id} lookups={lookups} loading={lookupsLoading} />
             <div className="member-workspace__footer">
-              <SyntheticDisclosure modelVersion={risk.model_version} />
               <p className="member-workspace__disclaimer">{decision.disclaimer}</p>
             </div>
           </div>

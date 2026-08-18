@@ -33,7 +33,7 @@ import "./AnalyticsCharts.css";
  * accurate against the true population and never misleading.
  */
 
-interface CategoryDatum {
+export interface CategoryDatum {
   key: string;
   label: string;
   count: number;
@@ -146,7 +146,13 @@ function ChartTitle({ id, accent, children }: { id: string; accent: ChartAccent;
   );
 }
 
-function DonutChart({
+/** Exported so a saved (server-paginated) population's summary view can
+ * render the exact same chart shell fed with SQL-aggregated counts
+ * (backend/db/repositories/populations.py's get_population_summary)
+ * instead of a client-side tally over a full FinalUC07Decision[] --
+ * see frontend/src/populations/SavedAnalyticsCharts.tsx. Same
+ * component, same visuals; only where the counts come from differs. */
+export function DonutChart({
   title,
   accent,
   categories,
@@ -238,7 +244,8 @@ function DonutChart({
   );
 }
 
-function HorizontalBarChart({
+/** Exported for the same reason as DonutChart above. */
+export function HorizontalBarChart({
   title,
   accent,
   categories,
@@ -317,7 +324,7 @@ function HorizontalBarChart({
   );
 }
 
-const RISK_META: { key: RiskTier; label: string }[] = [
+export const RISK_META: { key: RiskTier; label: string }[] = [
   { key: "LOW", label: "Low" },
   { key: "MODERATE", label: "Moderate" },
   { key: "HIGH", label: "High" },
@@ -353,7 +360,7 @@ export function RiskDonut({
   );
 }
 
-const SAFETY_META: { key: SafetyState; label: string }[] = [
+export const SAFETY_META: { key: SafetyState; label: string }[] = [
   { key: "CLEAR", label: "Clear" },
   { key: "CAUTION", label: "Caution" },
   { key: "OVERRIDE", label: "Override" },
@@ -395,7 +402,7 @@ export function SafetyDonut({
   );
 }
 
-const NAV_META: { key: NavigationDestination; label: string }[] = NAVIGATION_DESTINATION_ORDER.map((key) => ({
+export const NAV_META: { key: NavigationDestination; label: string }[] = NAVIGATION_DESTINATION_ORDER.map((key) => ({
   key,
   label: NAVIGATION_DESTINATION_LABEL[key],
 }));
@@ -437,7 +444,7 @@ interface ProbabilityBin {
   count: number;
 }
 
-const BIN_EDGES = [0, 10, 20, 30, 40, 50];
+export const BIN_EDGES = [0, 10, 20, 30, 40, 50];
 
 function binForPercent(pctValue: number): number {
   for (let i = BIN_EDGES.length - 1; i >= 0; i--) {

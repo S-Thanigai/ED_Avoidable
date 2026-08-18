@@ -37,7 +37,7 @@ function classify(status: number | null): { title: string } {
   if (status === null) return { title: "Backend unavailable" };
   if (status === 404) return { title: "Member not found" };
   if (status === 422) return { title: "Invalid request data" };
-  if (status === 503) return { title: "UC07 model unavailable" };
+  if (status === 503) return { title: "ED Navigator model unavailable" };
   if (status >= 500) return { title: "Backend error" };
   return { title: "Request failed" };
 }

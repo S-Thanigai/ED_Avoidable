@@ -87,7 +87,7 @@ export function MemberReportActions({
           <div className="member-comm__action-body">
             <span className="member-comm__action-title">Generate / Download Member Report</span>
             <p className="member-comm__action-desc">
-              Creates the current UC07 care-navigation report using the member's existing decision
+              Creates the current ED Navigator care-navigation report using the member's existing decision
               information.
             </p>
             {downloadError && (

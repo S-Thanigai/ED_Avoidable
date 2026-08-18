@@ -11,3 +11,9 @@ xgboost==3.2.0
 httpx
 python-dotenv
 reportlab
+
+# Azure SQL persistence (Phase: DB/auth integration)
+sqlalchemy
+alembic
+pyodbc
+argon2-cffi

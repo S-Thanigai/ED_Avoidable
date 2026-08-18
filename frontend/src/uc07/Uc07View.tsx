@@ -4,8 +4,6 @@ import type { UploadFiles } from "../types";
 import { decideUC07, UC07ApiError } from "./api";
 import type { FinalUC07Decision, UC07DecideResponse } from "./types";
 import { Uc07DisclaimerBanner } from "./components/Uc07DisclaimerBanner";
-import { SyntheticDisclosure } from "./components/SyntheticDisclosure";
-import { ModelInfo } from "./components/ModelInfo";
 import { DecisionLoading } from "./components/DecisionLoading";
 import { DecisionError } from "./components/DecisionError";
 import { PopulationSummary } from "./components/PopulationSummary";
@@ -18,6 +16,7 @@ import { MemberDetailsDrawer } from "./components/MemberDetailsDrawer";
 import { CurrentSafetyContextSection } from "./components/CurrentSafetyContextSection";
 import { SafetyContextCsvUpload } from "./components/SafetyContextCsvUpload";
 import { readAndParseUc07Files, type Uc07MemberDataLookups } from "./csvUtils";
+import { SaveAnalysisPrompt } from "../populations/SaveAnalysisPrompt";
 import {
   DEFAULT_FILTERS,
   DEFAULT_SORT,
@@ -186,11 +185,6 @@ export function Uc07View() {
     <div className="uc07-view">
       <Uc07DisclaimerBanner />
 
-      <div className="uc07-view__intro">
-        <SyntheticDisclosure modelVersion={response?.model_version} />
-        <ModelInfo />
-      </div>
-
       {inputsExpanded || !response ? (
         <section className="uc07-view__data-inputs" aria-label="Data inputs setup">
           <h2 className="uc07-view__section-heading">
@@ -274,6 +268,13 @@ export function Uc07View() {
 
       {!loading && !error && response && (
         <>
+          <SaveAnalysisPrompt
+            files={files}
+            indexDate={response.index_date}
+            safetyContextFile={safetyContextCsvFile}
+            memberCount={allDecisions.length}
+          />
+
           {isBatch && (
             <>
               <PopulationSummary decisions={effectiveDecisions} filters={filters} onFilterChange={updateFilters} />

@@ -25,11 +25,14 @@ frontend/node_modules/
 dist/
 build/
 
-# Cache
+# Cache / coverage
 .pytest_cache/
 *.log
+.coverage
+htmlcov/
 
 # OS / Editor
 .DS_Store
 Thumbs.db
 .vscode/
+.idea/

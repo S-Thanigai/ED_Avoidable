@@ -57,7 +57,7 @@ export function Header({ theme, onToggleTheme }: HeaderProps) {
           </div>
           <div className="app-header__identity">
             <span className="app-header__wordmark">
-              UC07 <span className="app-header__wordmark-accent">Navigator</span>
+              ED <span className="app-header__wordmark-accent">Navigator</span>
             </span>
             <span className="app-header__tagline">Care Management Intelligence</span>
           </div>
