@@ -1,6 +1,12 @@
 import { useId, useMemo } from "react";
+import type { ReactElement } from "react";
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { FinalUC07Decision, NavigationDestination, RiskTier, SafetyState } from "../types";
+import {
+  NAVIGATION_DESTINATION_COLOR,
+  NAVIGATION_DESTINATION_LABEL,
+  NAVIGATION_DESTINATION_ORDER,
+} from "../navigationDisplay";
 import "./AnalyticsCharts.css";
 
 /**
@@ -106,8 +112,43 @@ function CategoryLegend({
   );
 }
 
+type ChartAccent = "risk" | "safety" | "navigation" | "probability";
+
+const CHART_ACCENT_ICON: Record<ChartAccent, ReactElement> = {
+  risk: (
+    <>
+      <path d="M12 3 2 20h20L12 3Z" />
+      <path d="M12 10v4" />
+      <path d="M12 17h.01" />
+    </>
+  ),
+  safety: <path d="M12 3 4.5 6v6.2c0 4.6 3.2 7.7 7.5 8.8 4.3-1.1 7.5-4.2 7.5-8.8V6L12 3Z" />,
+  navigation: <circle cx="12" cy="12" r="9" />,
+  probability: (
+    <>
+      <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
+    </>
+  ),
+};
+
+function ChartTitle({ id, accent, children }: { id: string; accent: ChartAccent; children: string }) {
+  return (
+    <div className="analytics-card__title-row">
+      <span className={`analytics-card__title-icon analytics-card__title-icon--${accent}`} aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          {CHART_ACCENT_ICON[accent]}
+        </svg>
+      </span>
+      <h3 className="analytics-card__title" id={id}>
+        {children}
+      </h3>
+    </div>
+  );
+}
+
 function DonutChart({
   title,
+  accent,
   categories,
   total,
   centerLabel,
@@ -116,6 +157,7 @@ function DonutChart({
   calloutText,
 }: {
   title: string;
+  accent: ChartAccent;
   categories: CategoryDatum[];
   total: number;
   centerLabel: string;
@@ -127,10 +169,10 @@ function DonutChart({
   const summary = categories.map((c) => `${c.label}: ${c.count} (${pct(c.count, total)}%)`).join(", ");
 
   return (
-    <div className="analytics-card" aria-labelledby={titleId}>
-      <h3 className="analytics-card__title" id={titleId}>
+    <div className={`analytics-card analytics-card--${accent}`} aria-labelledby={titleId}>
+      <ChartTitle id={titleId} accent={accent}>
         {title}
-      </h3>
+      </ChartTitle>
       {total === 0 ? (
         <p className="analytics-card__empty">No members in the current population.</p>
       ) : (
@@ -198,12 +240,14 @@ function DonutChart({
 
 function HorizontalBarChart({
   title,
+  accent,
   categories,
   total,
   activeKey,
   onSelect,
 }: {
   title: string;
+  accent: ChartAccent;
   categories: CategoryDatum[];
   total: number;
   activeKey: string | null;
@@ -213,10 +257,10 @@ function HorizontalBarChart({
   const summary = categories.map((c) => `${c.label}: ${c.count} (${pct(c.count, total)}%)`).join(", ");
 
   return (
-    <div className="analytics-card" aria-labelledby={titleId}>
-      <h3 className="analytics-card__title" id={titleId}>
+    <div className={`analytics-card analytics-card--${accent}`} aria-labelledby={titleId}>
+      <ChartTitle id={titleId} accent={accent}>
         {title}
-      </h3>
+      </ChartTitle>
       {total === 0 ? (
         <p className="analytics-card__empty">No members in the current population.</p>
       ) : (
@@ -299,6 +343,7 @@ export function RiskDonut({
   return (
     <DonutChart
       title="Risk Distribution"
+      accent="risk"
       categories={categories}
       total={decisions.length}
       centerLabel="Click a segment to filter the member table by risk tier."
@@ -335,6 +380,7 @@ export function SafetyDonut({
   return (
     <DonutChart
       title="Safety Distribution"
+      accent="safety"
       categories={categories}
       total={decisions.length}
       centerLabel="Click a segment to filter the member table by safety state."
@@ -349,21 +395,10 @@ export function SafetyDonut({
   );
 }
 
-const NAV_META: { key: NavigationDestination; label: string }[] = [
-  { key: "PRIMARY_CARE", label: "Primary Care" },
-  { key: "URGENT_CARE", label: "Urgent Care" },
-  { key: "TELEHEALTH", label: "Telehealth" },
-  { key: "CARE_MANAGEMENT", label: "Care Management" },
-  { key: "NO_PROACTIVE_NAVIGATION", label: "No proactive navigation" },
-];
-
-const NAV_COLOR: Record<NavigationDestination, string> = {
-  PRIMARY_CARE: "var(--nav-primary-care)",
-  URGENT_CARE: "var(--nav-urgent-care)",
-  TELEHEALTH: "var(--nav-telehealth)",
-  CARE_MANAGEMENT: "var(--nav-care-management)",
-  NO_PROACTIVE_NAVIGATION: "var(--nav-none)",
-};
+const NAV_META: { key: NavigationDestination; label: string }[] = NAVIGATION_DESTINATION_ORDER.map((key) => ({
+  key,
+  label: NAVIGATION_DESTINATION_LABEL[key],
+}));
 
 export function NavigationBar({
   decisions,
@@ -379,12 +414,13 @@ export function NavigationBar({
     key: n.key,
     label: n.label,
     count: counts.get(n.key) ?? 0,
-    color: NAV_COLOR[n.key],
+    color: NAVIGATION_DESTINATION_COLOR[n.key],
   }));
 
   return (
     <HorizontalBarChart
       title="Navigation Distribution"
+      accent="navigation"
       categories={categories}
       total={decisions.length}
       activeKey={activeDestination}
@@ -449,10 +485,10 @@ export function ProbabilityHistogram({
   const summary = bins.map((b) => `${b.label}: ${b.count} members`).join(", ");
 
   return (
-    <div className="analytics-card" aria-labelledby={titleId}>
-      <h3 className="analytics-card__title" id={titleId}>
+    <div className="analytics-card analytics-card--probability" aria-labelledby={titleId}>
+      <ChartTitle id={titleId} accent="probability">
         Probability Distribution
-      </h3>
+      </ChartTitle>
       {total === 0 ? (
         <p className="analytics-card__empty">No members in the current population.</p>
       ) : (

@@ -1,14 +1,7 @@
 import type { FinalUC07Decision } from "../types";
 import type { SortDirection, SortKey, SortState } from "../tableState";
+import { NAVIGATION_DESTINATION_COLOR, NAVIGATION_DESTINATION_LABEL } from "../navigationDisplay";
 import "./Uc07ResultsTable.css";
-
-const DEST_LABEL: Record<string, string> = {
-  PRIMARY_CARE: "Primary Care",
-  URGENT_CARE: "Urgent Care",
-  TELEHEALTH: "Telehealth",
-  CARE_MANAGEMENT: "Care Management",
-  NO_PROACTIVE_NAVIGATION: "No proactive navigation",
-};
 
 const SAFETY_LABEL: Record<string, string> = {
   CLEAR: "Clear",
@@ -107,12 +100,36 @@ export function Uc07ResultsTable({
                   </div>
                 </td>
                 <td>
-                  {decision.navigation.destination
-                    ? DEST_LABEL[decision.navigation.destination] ?? decision.navigation.destination
-                    : "Suppressed by override"}
+                  {decision.navigation.destination ? (
+                    <span className="uc07-results-table__nav">
+                      <span
+                        className="uc07-results-table__nav-dot"
+                        aria-hidden="true"
+                        style={{ background: NAVIGATION_DESTINATION_COLOR[decision.navigation.destination] }}
+                      />
+                      {NAVIGATION_DESTINATION_LABEL[decision.navigation.destination] ?? decision.navigation.destination}
+                    </span>
+                  ) : (
+                    "Suppressed by override"
+                  )}
                 </td>
                 <td>
                   <span className={`uc07-results-table__safety uc07-results-table__safety--${decision.safety.state.toLowerCase()}`}>
+                    {decision.safety.state === "OVERRIDE" && (
+                      <svg
+                        className="uc07-results-table__safety-icon"
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M12 3 2 20h20L12 3Z" />
+                        <path d="M12 10v4M12 17h.01" />
+                      </svg>
+                    )}
                     {SAFETY_LABEL[decision.safety.state] ?? decision.safety.state}
                   </span>
                 </td>

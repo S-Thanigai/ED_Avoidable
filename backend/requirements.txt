@@ -10,3 +10,4 @@ shap
 xgboost==3.2.0
 httpx
 python-dotenv
+reportlab

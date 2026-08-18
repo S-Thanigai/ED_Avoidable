@@ -778,3 +778,141 @@ Full rationale in `docs/08B_CURRENT_SAFETY_CONTEXT_WORKFLOW.md`.
      asyncio task that "isn't blocked" at the scheduling level can still
      be starved for CPU time if the offloaded work never releases the
      GIL. See `docs/08D_CRITICAL_FIXES.md` §5.
+
+121. **Member Communication & Reporting (PDF report + email, Phase 9)
+     reuses the SAME trust model `/uc07/explain` already established,
+     rather than adding server-side decision persistence.** `POST
+     /uc07/report` and `POST /uc07/email` accept an already-computed
+     risk/navigation/safety summary the frontend echoes back (same
+     allow-listed Pydantic shape as `ExplainRequest`, extended with
+     member contact fields and `safety.message`) instead of re-deriving
+     it from an uploaded CSV. This app has no persisted-decision store
+     -- `/uc07/decide` is stateless per-upload -- so "regenerate/
+     validate server-side" would require a new persistence layer, which
+     is out of scope for an operational communication layer. Documented
+     explicitly in `docs/09_MEMBER_COMMUNICATION_REPORTING.md` section 7
+     rather than silently assumed; a future phase could add real
+     server-side decision persistence and revalidate there instead.
+122. **Report/email generation never triggers a fresh GenAI call --
+     an already-approved explanation is reused, or the SAME
+     deterministic fallback `genai_explanation.py` already produces is
+     built with GenAI forced off for that one call (Phase 9).**
+     `main.py`'s `_resolve_report_explanation()` calls
+     `genai_explanation.generate_explanation()` with a `GenAIConfig`
+     whose `.enabled` is set to `False` before the call -- this is the
+     exact same code path `GENAI_ENABLED=false` uses everywhere else in
+     this app (zero network calls, `_deterministic_explanation()`
+     directly), reused rather than reimplemented, so report/email PDFs
+     never depend on Groq/Ollama being configured or reachable.
+     `test_report_endpoint_uses_deterministic_fallback_when_no_explanation_given`
+     proves this by monkeypatching both providers' HTTP call functions
+     to raise `AssertionError` if invoked.
+123. **A ReportLab-rendered PDF's `pypdf`-extracted text is not
+     reliable evidence that a glyph will actually RENDER correctly in a
+     real PDF viewer (Phase 9).** An early draft of
+     `report_service.py` used the direction/priority Unicode glyphs --
+     code points outside the base Helvetica font's WinAnsi/Latin-1
+     encoding. `pypdf.PdfReader.extract_text()` still returned the
+     intended character (ReportLab embeds a `ToUnicode` CMap for
+     text-extraction purposes independent of whether the font actually
+     HAS a drawable glyph for it), so a content-string test would have
+     passed while the character rendered as a broken/missing-glyph box
+     in an actual viewer. Fixed to plain ASCII (`(+)`/`(-)`/
+     `-- PRIORITY`) before this was caught visually rather than by a
+     test -- lesson for future phases: verify custom PDF glyphs against
+     the actual font's encoding table, not just against extracted text.
+
+124. **`smtplib.SMTP(timeout=X)` already bounds EVERY protocol stage
+     (connect, EHLO, STARTTLS, AUTH, DATA), not just the initial
+     connection -- an intermittent SMTP TIMEOUT is therefore an
+     OBSERVABILITY problem (which stage? what kind of failure?), not
+     evidence the configured timeout is being ignored (Phase 9.1).**
+     Verified directly from CPython's `smtplib` source: `connect()`
+     creates the socket via `socket.create_connection(..., timeout)`,
+     and a Python socket's timeout is sticky for the life of that
+     socket -- every subsequent `getreply()`/`putcmd()` on the same
+     connection reuses it. The real fix for "TIMEOUT/PROVIDER_ERROR
+     happening sometimes" was per-stage attribution
+     (`SmtpStageError.stage`) and categorization
+     (`SmtpStageError.error_code`, from `smtplib`'s actual exception
+     hierarchy + the server's numeric response code), NOT raising the
+     timeout value -- raising a timeout that was already correctly
+     applied would only have made a genuinely-stuck connection take
+     longer to fail, not fixed anything. See
+     `docs/09_MEMBER_COMMUNICATION_REPORTING.md` section 8a.
+125. **A retry-on-transient-failure policy for SMTP must treat a
+     TIMEOUT/CONNECTION_FAILED occurring DURING message transmission
+     differently from the identical failure occurring BEFORE it, even
+     though both surface as the same exception types (Phase 9.1).**
+     Before the message body (DATA) is sent, a transient failure is
+     unambiguous: the server never received the message, so a retry is
+     safe. Once transmission has started, a lost connection or timeout
+     while waiting for the final server response is AMBIGUOUS -- the
+     server may have already queued the message before the connection
+     dropped. `email_service.py`'s `_is_retryable()` therefore treats
+     stage=="send" as retryable ONLY for an EXPLICIT 4xx/421 response
+     (a real "try again" signal from the server per RFC 5321), and
+     NEVER for a bare TIMEOUT/CONNECTION_FAILED at that stage, even
+     though those same two error codes ARE retried at every earlier
+     stage. This is intentionally NOT solved with a full idempotency
+     mechanism (e.g. a dedup key) in this pass -- documented as a known
+     limitation (a human manually re-clicking Send after seeing that
+     specific warning could still produce a duplicate) rather than
+     silently ignored or over-engineered away. See
+     `docs/09_MEMBER_COMMUNICATION_REPORTING.md` section 8a and
+     Limitations.
+
+126. **A fixed, bounded `error_code` taxonomy for SMTP failures is not
+     sufficient on its own for diagnosing a genuinely novel/platform-
+     specific exception -- the raw exception's CLASS NAME must also be
+     captured and logged, even though it is never part of the public
+     API contract (Phase 9.2).** A reported `stage=starttls
+     result=UNKNOWN_PROVIDER_ERROR` could not be root-caused from the
+     log line alone, because the categorizer's final catch-all
+     discarded the actual exception type once it decided no more
+     specific bucket applied. Fix: `SmtpStageError.exception_type`
+     (`type(exc).__name__` only, never `str(exc)`, which can echo
+     provider-response text) is now set on EVERY return path of
+     `_categorize_smtp_exception()`, including the catch-all, and
+     logged as `exc_type=` alongside `stage=`/`result=`/`smtp_code=`.
+     The bounded `error_code` enum stays bounded (the frontend/API only
+     ever need a small, stable set of values) -- `exception_type` is a
+     purely internal, log-only diagnostic escape hatch, not a new
+     public contract field. See
+     `docs/09_MEMBER_COMMUNICATION_REPORTING.md` section 8a.
+
+127. **A "make every SMTP stage individually catchable" refactor must
+     not split `smtplib.SMTP` construction from `.connect()` -- the
+     constructor is the ONLY place `self._host` (later read by
+     `starttls()` for TLS SNI/hostname verification) gets set (Phase
+     9.3).** Phase 9.1 changed `smtplib.SMTP(host, port,
+     timeout=timeout_seconds)` (host passed directly, the original
+     working pattern) to `smtplib.SMTP(timeout=timeout_seconds)`
+     followed by a separate `smtp.connect(host, port)` call, purely to
+     give "connect" its own attributable/timeable stage. This is a
+     real, CPython-source-confirmed footgun: `connect()` updates the
+     live socket using its own local `host` parameter but never
+     assigns it to `self._host`, which stays at the constructor's `''`
+     default. `starttls()` unconditionally passes `server_hostname=
+     self._host` to `ssl.SSLContext.wrap_socket()`; with an empty
+     `server_hostname` and `check_hostname=True` (the untouched,
+     correct default from `ssl.create_default_context()`), `wrap_socket()`
+     raises `ValueError("check_hostname requires server_hostname")` --
+     100% of the time, on every call, since this is deterministic
+     object state, not a network flake. This exception matched NONE of
+     `_categorize_smtp_exception()`'s explicit branches (not
+     `ssl.SSLError`, not any `smtplib`/`socket`/`OSError` subclass),
+     so it fell through to the generic `UNKNOWN_PROVIDER_ERROR`
+     catch-all -- explaining both why Phase 9.2's added `exception_type`
+     tagging was necessary to even DIAGNOSE this (it would have logged
+     `exc_type=ValueError`) and why the fix itself is to restore
+     passing `host`/`port` directly to the constructor, keeping
+     "connect" attributable by wrapping the constructor CALL itself in
+     the stage's try/except, not by deferring the connection. Lesson:
+     when refactoring a stdlib protocol client for finer-grained error
+     attribution, check whether the object also carries internal state
+     set ONLY at construction time that a later method depends on --
+     splitting "create" from "connect" is not always a safe,
+     behavior-preserving transformation even when it looks like one at
+     the call-sequence level. See
+     `docs/09_MEMBER_COMMUNICATION_REPORTING.md` section 8a.

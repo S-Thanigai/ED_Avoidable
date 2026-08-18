@@ -49,5 +49,22 @@ for _key, _default in (
     # non-deterministic depending on one developer's local machine state.
     ("GROQ_API_KEY", ""),
     ("GROQ_MODEL", "llama-3.3-70b-versatile"),
+    # Phase 9 -- same reasoning: a developer's real backend/.env may have
+    # EMAIL_ENABLED=true and real SMTP_* values for their own manual
+    # testing. Pinned off/blank here so no test that assumes email is
+    # disabled (the default posture) becomes non-deterministic depending
+    # on one developer's local machine state. Tests that want a
+    # configured/enabled EmailService construct their own EmailConfig or
+    # monkeypatch.setenv(...) explicitly, same convention as GenAI.
+    ("EMAIL_ENABLED", "false"),
+    ("EMAIL_PROVIDER", "smtp"),
+    ("SMTP_HOST", ""),
+    ("SMTP_PORT", "587"),
+    ("SMTP_USERNAME", ""),
+    ("SMTP_PASSWORD", ""),
+    ("SMTP_FROM_EMAIL", ""),
+    ("SMTP_FROM_NAME", "UC07 Care Management"),
+    ("SMTP_USE_TLS", "true"),
+    ("EMAIL_TIMEOUT_SECONDS", "30"),
 ):
     os.environ.setdefault(_key, _default)

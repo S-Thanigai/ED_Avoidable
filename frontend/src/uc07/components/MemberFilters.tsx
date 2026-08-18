@@ -30,7 +30,12 @@ export function MemberFilters({ filters, onChange, totalCount, filteredCount }: 
   return (
     <section className="member-filters" aria-label="Member filters">
       <div className="member-filters__heading">
-        <h2 className="member-filters__title">Members</h2>
+        <div>
+          <h2 className="member-filters__title">Member Prioritization</h2>
+          <p className="member-filters__subtitle">
+            Review members by modeled ED utilization risk, navigation opportunity and safety status.
+          </p>
+        </div>
         <span className="member-filters__count">
           {active ? `${filteredCount} of ${totalCount} members` : `${totalCount} members`}
         </span>

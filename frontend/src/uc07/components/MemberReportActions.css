@@ -1,0 +1,156 @@
+.member-comm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.member-comm__intro {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.member-comm__heading {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.member-comm__subtitle {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+  max-width: 60ch;
+}
+
+.member-comm__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.member-comm__action-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-sm);
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.member-comm__action-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.member-comm__action-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.member-comm__action-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.member-comm__action-icon--report {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.member-comm__action-icon--email {
+  background: var(--teal-bg);
+  color: var(--teal);
+}
+
+.member-comm__action-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.member-comm__action-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.member-comm__action-desc {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.member-comm__action-error {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  color: var(--status-critical);
+}
+
+.member-comm__action-status {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  color: var(--status-good);
+}
+
+.member-comm__button {
+  flex-shrink: 0;
+  font-size: 0.84rem;
+  font-weight: 700;
+  padding: 9px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-page);
+  color: var(--text-primary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.member-comm__button:hover:not(:disabled) {
+  background: var(--surface-card-hover);
+}
+
+.member-comm__button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.member-comm__button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.member-comm__button--primary {
+  background: var(--gradient-primary);
+  border-color: transparent;
+  color: var(--text-on-accent);
+}
+
+.member-comm__button--primary:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+@media (max-width: 560px) {
+  .member-comm__action-card {
+    flex-wrap: wrap;
+  }
+  .member-comm__button {
+    width: 100%;
+  }
+}
